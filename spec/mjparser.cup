@@ -9,6 +9,8 @@ import rs.ac.bg.etf.pp1.ast.*;
 
 parser code {:
 
+	boolean errorDetected;
+
 	Logger log = Logger.getLogger(getClass());
    
    
@@ -28,13 +30,17 @@ parser code {:
     }
 
     public void report_error(String message, Object info) {
+    	errorDetected = true;
     	StringBuilder msg = new StringBuilder(message); 
     	if (info instanceof Symbol)
             msg.append (" na liniji ").append(((Symbol)info).left);
         log.error(msg.toString());
     }
 
+:}
 
+init with {:
+	errorDetected = false;
 :}
 
 
@@ -45,4 +51,222 @@ scan with {:
 	return s;
 :}
 
+/* TERMINALS */
 
+/* Key words */
+terminal PROG, NAMESPACE, CONST, VOID, READ, PRINT, NEW;
+/* terminal STATIC; */
+
+/* Operators */
+terminal ASSIGN, INC, DEC, PLUS, MINUS, MUL, DIV, MODULE;
+
+/* Control operators */
+terminal LBRACE, RBRACE, LBRACKET, RBRACKET, LPAREN, RPAREN;
+terminal SEMI, COMMA, COLON;
+
+/* Values*/
+terminal Integer NUMBER;
+terminal Integer BOOL;
+terminal String CHAR;
+terminal String IDENT;
+
+/* NONTERMINALS */
+/* Grammar */
+nonterminal Program, Namespace;
+nonterminal ConstDecl, VarDecl, MethodDecl;
+nonterminal Type;
+/* nonterminal StaticInitializer */
+nonterminal Statement;
+nonterminal FormPars;
+nonterminal DesignatorStatement, Designator, Expr;
+nonterminal Term, Addop, Mulop, Factor;
+
+/* Helper */
+nonterminal Decl, DeclMul;
+nonterminal ConstDeclList, ConstDeclAssign, TypeConst;
+nonterminal VarDeclList, VarDeclaration, VarBracketsDecl, VarDeclMul;
+nonterminal MethodDeclMul;
+nonterminal StatementEpsilon;
+nonterminal TypeVoid;
+nonterminal FormParsMul, FormParsDecl;
+nonterminal PrintParam;
+nonterminal DesExpr;
+nonterminal Minus, AddTerm, MulFactor;
+
+
+Program 				::= (Program)						PROG IDENT:progName Namespace DeclMul LBRACE MethodDeclMul RBRACE
+							;
+							
+Namespace				::= (WithNamespace)					NAMESPACE IDENT:namespaceName LBRACE DeclMul LBRACE MethodDeclMul RBRACE RBRACE
+							|
+							(WithoutNamespace)				/* epsilon */
+							;
+							
+DeclMul					::= (DeclMulDecl)					DeclMul Decl
+							|
+							(DeclMulEpsilon)				/* epsilon */
+							;							
+							
+Decl					::= (DeclConst)						ConstDecl
+							|
+							(DeclVar)						VarDecl
+							/*
+							|
+							(DeclClass)						ClassDecl
+							*/
+							;	
+						
+ConstDecl				::= (ConstDecl)						CONST Type:vType ConstDeclAssign ConstDeclList SEMI
+							;		
+																					
+ConstDeclList			::= (ConstDeclListRep)				COMMA ConstDeclAssign ConstDeclList
+							|
+							(ConstDeclListEmpty)			/* epsilon */
+							;		
+															
+ConstDeclAssign			::= (ConstDeclAssign)				IDENT:vName ASSIGN TypeConst
+							;
+							
+TypeConst 				::= (TypeConstNum)					NUMBER:constVal
+							|
+							(TypeConstChar)					CHAR:constVal
+							|
+							(TypeConstBool)					BOOL:constVal
+							;
+
+VarDeclMul				::= (VarDeclMulRep)					VarDeclMul VarDecl
+							|
+							(VarDeclMulEpsilon)				/* epsilon */
+							;
+																					
+VarDecl					::= (VarDecl)						Type:vType VarDecl VarDeclList SEMI
+							;
+							
+							
+VarDeclList				::= (VarDeclListRep)				COMMA VarDeclaration VarDeclList
+							|
+							(VarDeclListEpsilon)			/* epsilon */
+							;
+										
+VarDeclaration			::= (VarDeclaration)				IDENT:vName VarBracketsDecl
+							;
+							
+VarBracketsDecl			::=	(VarBracketsDeclBrackets)		LBRACKET RBRACKET
+							|
+							(VarBracketsDeclNoBrackets)		/* epsilon */
+							;
+							
+/*
+Class Declarations 
+
+StaticInitializer		::= (StaticInitializer)				STATIC LBRACE StatementEpsilon RBRACE
+							;
+*/
+
+							
+StatementEpsilon		::=	(StmtEpsStmt)					StatementEpsilon Statement
+							|
+							(StmtEpsEps)					/* epsilon */
+							;
+
+MethodDeclMul			::= (MethodDeclMulRep)				MethodDeclMul MethodDecl
+							|
+							(MethodDeclMulEpsilon)			/* epsilon */
+							;
+							
+MethodDecl				::= (Method)						TypeVoid IDENT:mName LPAREN FormPars RPAREN VarDeclMul LBRACE StatementEpsilon RBRACE
+							;
+							
+TypeVoid				::=	(TypeVoidType)					Type:vType
+							|
+							(TypeVoidVoid)					VOID
+							;
+
+FormPars				::= (FormParsPars)					FormParsDecl FormParsMul
+							|
+							(FormParsEpsilon)				/* epsilon */
+							;
+
+FormParsMul				::= (FormParsMulRep)				COMMA FormParsDecl FormParsMul
+							|
+							(FormParsMulEpsilon)			/* epsilon */	
+							;
+
+FormParsDecl			::= (FormsParsDecl)					Type:vType IDENT:vName VarBracketsDecl
+							;
+							
+Type					::= (TypeIdent)						IDENT:tName
+							|
+							(TypeNamespace)					IDENT:nName COLON COLON IDENT:tName
+							;
+						
+Statement				::= (StmtDesignatorStmt)			DesignatorStatement:des SEMI
+							|
+							(StmtRead)						READ LPAREN Designator:des RPAREN SEMI
+							|
+							(StmtPrint)						PRINT LPAREN Expr:e PrintParam RPAREN SEMI				
+							;
+							
+PrintParam				::= (PrintParamNumConst)			COMMA NUMBER:num
+							|
+							(PrintParamEpsilon)				/* epsilon */
+							;
+							
+DesignatorStatement		::= (DStmtDesAExpr)					Designator:des ASSIGN Expr:e
+							|
+							(DStmtDesInc)					Designator:des INC
+							|
+							(DStmtDesDec)					Designator:des DEC
+							;
+					
+Designator 				::= (DesignatorIdent)				IDENT:dName DesExpr:e
+							|
+							(DesignatorNamespace)			IDENT:nName COLON COLON IDENT:dName DesExpr:e
+							;
+							
+DesExpr					::= (DesExprExpr)					LBRACKET Expr:e RBRACKET
+							|
+							(DesExprEpsilon)				/* epsilon */
+							;
+							
+Expr					::= (Expr)							Minus Term:t AddTerm:at
+							;
+							
+Minus					::= (MinusMinus)					MINUS
+							|
+							(MinusEpsilon)					/* epsilon */
+							;
+					
+AddTerm					::= (AddTermTerm)					AddTerm Addop Term:t
+							|
+							(AddTermEpsilon)				/* epsilon */
+							;
+							
+Term					::= (Term)							Factor:f MulFactor:mf
+							;
+							
+MulFactor				::= (MulFactorFactor)				MulFactor Mulop Factor:f
+							|
+							(MulFactorEpsilon)				/* epsilon */
+							;
+							
+Factor					::= (FactorConst)					TypeConst:cT
+							|
+							(FactorExpr)					LPAREN Expr:e RPAREN
+							|
+							(FactorDesignator)				Designator:des
+							|
+							(FactorNew)						NEW Type:nType LBRACKET Expr:e RBRACKET
+							;
+							
+Addop					::= (AddopPlus)						PLUS
+							|
+							(AddopMinus)					MINUS
+							;
+						
+Mulop					::= (MulopMul)						MUL
+							|
+							(MulopDiv)						DIV
+							|
+							(MulopMod)						MODULE
+							;

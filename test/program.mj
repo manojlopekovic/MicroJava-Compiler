@@ -1,0 +1,12 @@
+program MJProgram
+const int b = 5;
+const int m = 5;
+{
+	int main(){
+		print(1);
+		
+		x = y + 5 +;
+		
+		print(2);
+	}
+}
