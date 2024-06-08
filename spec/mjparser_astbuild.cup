@@ -54,7 +54,7 @@ scan with {:
 /* TERMINALS */
 
 /* Key words */
-terminal PROG, CONST, VOID, READ, PRINT, NEW, RETURN;
+terminal PROG, CONST, VOID, READ, PRINT, NEW, RETURN, RANGE;
 /* terminal NAMESPACE; */
 /* terminal STATIC; */
 
@@ -94,7 +94,10 @@ nonterminal Factor Factor;
 /* Helper */
 /* nonterminal NamespaceMul; */
 nonterminal Decl Decl;
-nonterminal DeclMul DeclMul;
+/* nonterminal DeclMul; */
+nonterminal ProgramName ProgramName;
+nonterminal MethodName MethodName;
+nonterminal DesignatorArrName DesignatorArrName;
 nonterminal ConstDeclList ConstDeclList;
 nonterminal ConstDeclAssign ConstDeclAssign;
 nonterminal TypeConst TypeConst;
@@ -108,35 +111,41 @@ nonterminal TypeVoid TypeVoid;
 nonterminal FormParsMul FormParsMul;
 nonterminal FormParsDecl FormParsDecl;
 nonterminal PrintParam PrintParam;
-nonterminal DesExpr DesExpr;
-nonterminal Minus Minus;
 nonterminal AddTerm AddTerm;
 nonterminal MulFactor MulFactor;
 nonterminal ExprEpsilon ExprEpsilon;
+nonterminal UnFactor UnFactor;
 
 
-/* Program 				::= (Program)						PROG IDENT:progName NamespaceMul DeclMul LBRACE MethodDeclMul RBRACE */
-Program 				::= (Program)						PROG IDENT:progName DeclMul:D1 LBRACE MethodDeclMul:M2 RBRACE {: RESULT=new Program(progName, D1, M2); RESULT.setLine(progNameleft); :}		
-						;
+/* Program 				::= (Program)						PROG ProgramName NamespaceMul Decl LBRACE MethodDeclMul RBRACE */
+Program 				::= (Program)						PROG ProgramName:P1 Decl:D2 LBRACE MethodDeclMul:M3 RBRACE {: RESULT=new Program(P1, D2, M3); RESULT.setLine(P1left); :}	
+							;
+
+ProgramName				::=	(ProgramName)					IDENT:pName {: RESULT=new ProgramName(pName); RESULT.setLine(pNameleft); :}
+							;
 /*							
 NamespaceMul			::= (NamespaceMulNamespace)			NamespaceMul Namespace
 							|
 							(NamespaceMulEpsilon)			
 							;
 							
-Namespace				::= (Namespace)						NAMESPACE IDENT:namespaceName LBRACE DeclMul LBRACE MethodDeclMul RBRACE RBRACE
+Namespace				::= (Namespace)						NAMESPACE IDENT:namespaceName LBRACE Decl LBRACE MethodDeclMul RBRACE RBRACE
 							;
 	
 */
-						
-DeclMul					::= (DeclMulDecl)					DeclMul:D1 Decl:D2 {: RESULT=new DeclMulDecl(D1, D2); RESULT.setLine(D1left); :}
+
+/*						
+DeclMul					::= (DeclMulDecl)					DeclMul Decl
 							|
-							(DeclMulEpsilon) {: RESULT=new DeclMulEpsilon(); :}				/* epsilon */
+							(DeclMulEpsilon)				
 							;							
-							
-Decl					::= (DeclConst)						ConstDecl:C1 {: RESULT=new DeclConst(C1); RESULT.setLine(C1left); :}
+
+*/							
+Decl					::= (DeclConst)						Decl:D1 ConstDecl:C2 {: RESULT=new DeclConst(D1, C2); RESULT.setLine(D1left); :}
 							|
-							(DeclVar)						VarDecl:V1 {: RESULT=new DeclVar(V1); RESULT.setLine(V1left); :}
+							(DeclVar)						Decl:D1 VarDecl:V2 {: RESULT=new DeclVar(D1, V2); RESULT.setLine(D1left); :}
+							|
+							(DeclEpsilon) {: RESULT=new DeclEpsilon(); :}					/* epsilon */
 							/*
 							|
 							(DeclClass)						ClassDecl
@@ -201,7 +210,10 @@ MethodDeclMul			::= (MethodDeclMulRep)				MethodDeclMul:M1 MethodDecl:M2 {: RESU
 							(MethodDeclMulEpsilon) {: RESULT=new MethodDeclMulEpsilon(); :}			/* epsilon */
 							;
 							
-MethodDecl				::= (Method)						TypeVoid:T1 IDENT:mName LPAREN FormPars:F2 RPAREN VarDeclMul:V3 LBRACE StatementEpsilon:S4 RBRACE {: RESULT=new Method(T1, mName, F2, V3, S4); RESULT.setLine(T1left); :}
+MethodDecl				::= (Method)						TypeVoid:T1 MethodName:M2 LPAREN FormPars:F3 RPAREN VarDeclMul:V4 LBRACE StatementEpsilon:S5 RBRACE {: RESULT=new Method(T1, M2, F3, V4, S5); RESULT.setLine(T1left); :}
+							;
+							
+MethodName				::= (MethodName)					IDENT:mName {: RESULT=new MethodName(mName); RESULT.setLine(mNameleft); :}
 							;
 							
 TypeVoid				::=	(TypeVoidType)					Type:vType {: RESULT=new TypeVoidType(vType); RESULT.setLine(vTypeleft); :}
@@ -222,7 +234,7 @@ FormParsMul				::= (FormParsMulRep)				COMMA FormParsDecl:F1 FormParsMul:F2 {: R
 FormParsDecl			::= (FormsParsDecl)					Type:vType IDENT:vName VarBracketsDecl:V1 {: RESULT=new FormsParsDecl(vType, vName, V1); RESULT.setLine(vTypeleft); :}
 							;
 							
-Type					::= (Type)						IDENT:tName {: RESULT=new Type(tName); RESULT.setLine(tNameleft); :}
+Type					::= (Type)							IDENT:tName {: RESULT=new Type(tName); RESULT.setLine(tNameleft); :}
 							/* 
 							|
 							(TypeNamespace)					IDENT:nName COLON COLON IDENT:tName 
@@ -255,24 +267,21 @@ DesignatorStatement		::= (DStmtDesAExpr)					Designator:des ASSIGN Expr:e {: RES
 							(DStmtDesDec)					Designator:des DEC {: RESULT=new DStmtDesDec(des); RESULT.setLine(desleft); :}
 							;
 					
-Designator 				::= (Designator)				IDENT:dName DesExpr:e {: RESULT=new Designator(dName, e); RESULT.setLine(dNameleft); :}
+Designator 				::= (DesignatorVar)					IDENT:dName {: RESULT=new DesignatorVar(dName); RESULT.setLine(dNameleft); :} 
+							|
+							(DesignatorArr)					DesignatorArrName:dArrName LBRACKET Expr:e RBRACKET {: RESULT=new DesignatorArr(dArrName, e); RESULT.setLine(dArrNameleft); :}
 							/* 
 							|
-							(DesignatorNamespace)			IDENT:nName COLON COLON IDENT:dName DesExpr:e 
+							(DesignatorNamespaceVar)		IDENT:nName COLON COLON IDENT:dName 
+							|
+							(DesignatorNamespaceArr)		IDENT:nName COLON COLON DesignatorArrName:dArrName LBRACKET Expr:e RBRACKET 
 							*/
 							;
 							
-DesExpr					::= (DesExprExpr)					LBRACKET Expr:e RBRACKET {: RESULT=new DesExprExpr(e); RESULT.setLine(eleft); :}
-							|
-							(DesExprEpsilon) {: RESULT=new DesExprEpsilon(); :}				/* epsilon */
-							;
+DesignatorArrName		::= (DesignatorArrName)				IDENT:dName {: RESULT=new DesignatorArrName(dName); RESULT.setLine(dNameleft); :}
+							;							
 							
-Expr					::= (Expr)							Minus:m Term:t AddTerm:at {: RESULT=new Expr(m, t, at); RESULT.setLine(mleft); :}
-							;
-							
-Minus					::= (MinusMinus)					MINUS {: RESULT=new MinusMinus(); :}
-							|
-							(MinusEpsilon) {: RESULT=new MinusEpsilon(); :}					/* epsilon */
+Expr					::= (Expr)							Term:t AddTerm:at {: RESULT=new Expr(t, at); RESULT.setLine(tleft); :}
 							;
 					
 AddTerm					::= (AddTermTerm)					AddTerm:A1 Addop:A2 Term:t {: RESULT=new AddTermTerm(A1, A2, t); RESULT.setLine(A1left); :}
@@ -280,14 +289,20 @@ AddTerm					::= (AddTermTerm)					AddTerm:A1 Addop:A2 Term:t {: RESULT=new AddTe
 							(AddTermEpsilon) {: RESULT=new AddTermEpsilon(); :}				/* epsilon */
 							;
 							
-Term					::= (Term)							Factor:f MulFactor:mf {: RESULT=new Term(f, mf); RESULT.setLine(fleft); :}
+Term					::= (Term)							UnFactor:f MulFactor:mf {: RESULT=new Term(f, mf); RESULT.setLine(fleft); :}
 							;
 							
-MulFactor				::= (MulFactorFactor)				MulFactor:M1 Mulop:M2 Factor:f {: RESULT=new MulFactorFactor(M1, M2, f); RESULT.setLine(M1left); :}
+							
+MulFactor				::= (MulFactorFactor)				MulFactor:M1 Mulop:M2 UnFactor:f {: RESULT=new MulFactorFactor(M1, M2, f); RESULT.setLine(M1left); :}
 							|
 							(MulFactorEpsilon) {: RESULT=new MulFactorEpsilon(); :}				/* epsilon */
 							;
-							
+	
+UnFactor				::= (UnFactorMinus)					MINUS Factor:f {: RESULT=new UnFactorMinus(f); RESULT.setLine(fleft); :}
+							|
+							(UnFactorPlus)					Factor:f {: RESULT=new UnFactorPlus(f); RESULT.setLine(fleft); :}
+							;
+						
 Factor					::= (FactorConst)					TypeConst:cT {: RESULT=new FactorConst(cT); RESULT.setLine(cTleft); :}
 							|
 							(FactorExpr)					LPAREN Expr:e RPAREN {: RESULT=new FactorExpr(e); RESULT.setLine(eleft); :}
@@ -295,6 +310,8 @@ Factor					::= (FactorConst)					TypeConst:cT {: RESULT=new FactorConst(cT); RES
 							(FactorDesignator)				Designator:des {: RESULT=new FactorDesignator(des); RESULT.setLine(desleft); :}
 							|
 							(FactorNew)						NEW Type:nType LBRACKET Expr:e RBRACKET {: RESULT=new FactorNew(nType, e); RESULT.setLine(nTypeleft); :}
+							|
+							(FactorRange)					RANGE LPAREN Expr:e RPAREN {: RESULT=new FactorRange(e); RESULT.setLine(eleft); :}
 							;
 							
 Addop					::= (AddopPlus)						PLUS {: RESULT=new AddopPlus(); :}

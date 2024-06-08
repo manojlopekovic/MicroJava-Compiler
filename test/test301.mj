@@ -2,7 +2,7 @@
 
 program test301
 
-	const int nula = 0;
+	const int nula = 0, dva = 2;
 	const int jedan = 1;
 	const int pet = 5;
 
@@ -11,12 +11,12 @@ program test301
 	
 {
 	void main()	
-		int bodovi;
+		int bodovi, ptr;
 		bool bt;
 	{
 		bodovi = 0;
 		bodovi++;
-		bodovi = bodovi + jedan;
+		bodovi = bodovi + -jedan;
 		bodovi = bodovi * pet;
 		bodovi--;
 		print(bodovi); 

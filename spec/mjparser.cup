@@ -54,7 +54,7 @@ scan with {:
 /* TERMINALS */
 
 /* Key words */
-terminal PROG, CONST, VOID, READ, PRINT, NEW, RETURN;
+terminal PROG, CONST, VOID, READ, PRINT, NEW, RETURN, RANGE;
 /* terminal NAMESPACE; */
 /* terminal STATIC; */
 
@@ -86,7 +86,11 @@ nonterminal Term, Addop, Mulop, Factor;
 
 /* Helper */
 /* nonterminal NamespaceMul; */
-nonterminal Decl, DeclMul;
+nonterminal Decl;
+/* nonterminal DeclMul; */
+nonterminal ProgramName;
+nonterminal MethodName;
+nonterminal DesignatorArrName;
 nonterminal ConstDeclList, ConstDeclAssign, TypeConst;
 nonterminal VarDeclList, VarDeclaration, VarBracketsDecl, VarDeclMul;
 nonterminal MethodDeclMul;
@@ -94,33 +98,40 @@ nonterminal StatementEpsilon;
 nonterminal TypeVoid;
 nonterminal FormParsMul, FormParsDecl;
 nonterminal PrintParam;
-nonterminal DesExpr;
-nonterminal Minus, AddTerm, MulFactor;
+nonterminal AddTerm, MulFactor;
 nonterminal ExprEpsilon;
+nonterminal UnFactor;
 
 
-/* Program 				::= (Program)						PROG IDENT:progName NamespaceMul DeclMul LBRACE MethodDeclMul RBRACE */
-Program 				::= (Program)						PROG IDENT:progName DeclMul LBRACE MethodDeclMul RBRACE		
-						;
+/* Program 				::= (Program)						PROG ProgramName NamespaceMul Decl LBRACE MethodDeclMul RBRACE */
+Program 				::= (Program)						PROG ProgramName Decl LBRACE MethodDeclMul RBRACE	
+							;
+
+ProgramName				::=	(ProgramName)					IDENT:pName
+							;
 /*							
 NamespaceMul			::= (NamespaceMulNamespace)			NamespaceMul Namespace
 							|
 							(NamespaceMulEpsilon)			
 							;
 							
-Namespace				::= (Namespace)						NAMESPACE IDENT:namespaceName LBRACE DeclMul LBRACE MethodDeclMul RBRACE RBRACE
+Namespace				::= (Namespace)						NAMESPACE IDENT:namespaceName LBRACE Decl LBRACE MethodDeclMul RBRACE RBRACE
 							;
 	
 */
-						
+
+/*						
 DeclMul					::= (DeclMulDecl)					DeclMul Decl
 							|
-							(DeclMulEpsilon)				/* epsilon */
+							(DeclMulEpsilon)				
 							;							
-							
-Decl					::= (DeclConst)						ConstDecl
+
+*/							
+Decl					::= (DeclConst)						Decl ConstDecl
 							|
-							(DeclVar)						VarDecl
+							(DeclVar)						Decl VarDecl
+							|
+							(DeclEpsilon)					/* epsilon */
 							/*
 							|
 							(DeclClass)						ClassDecl
@@ -185,7 +196,10 @@ MethodDeclMul			::= (MethodDeclMulRep)				MethodDeclMul MethodDecl
 							(MethodDeclMulEpsilon)			/* epsilon */
 							;
 							
-MethodDecl				::= (Method)						TypeVoid IDENT:mName LPAREN FormPars RPAREN VarDeclMul LBRACE StatementEpsilon RBRACE
+MethodDecl				::= (Method)						TypeVoid MethodName LPAREN FormPars RPAREN VarDeclMul LBRACE StatementEpsilon RBRACE
+							;
+							
+MethodName				::= (MethodName)					IDENT:mName
 							;
 							
 TypeVoid				::=	(TypeVoidType)					Type:vType
@@ -206,7 +220,7 @@ FormParsMul				::= (FormParsMulRep)				COMMA FormParsDecl FormParsMul
 FormParsDecl			::= (FormsParsDecl)					Type:vType IDENT:vName VarBracketsDecl
 							;
 							
-Type					::= (Type)						IDENT:tName
+Type					::= (Type)							IDENT:tName
 							/* 
 							|
 							(TypeNamespace)					IDENT:nName COLON COLON IDENT:tName 
@@ -239,24 +253,21 @@ DesignatorStatement		::= (DStmtDesAExpr)					Designator:des ASSIGN Expr:e
 							(DStmtDesDec)					Designator:des DEC
 							;
 					
-Designator 				::= (Designator)				IDENT:dName DesExpr:e
+Designator 				::= (DesignatorVar)					IDENT:dName 
+							|
+							(DesignatorArr)					DesignatorArrName:dArrName LBRACKET Expr:e RBRACKET
 							/* 
 							|
-							(DesignatorNamespace)			IDENT:nName COLON COLON IDENT:dName DesExpr:e 
+							(DesignatorNamespaceVar)		IDENT:nName COLON COLON IDENT:dName 
+							|
+							(DesignatorNamespaceArr)		IDENT:nName COLON COLON DesignatorArrName:dArrName LBRACKET Expr:e RBRACKET 
 							*/
 							;
 							
-DesExpr					::= (DesExprExpr)					LBRACKET Expr:e RBRACKET
-							|
-							(DesExprEpsilon)				/* epsilon */
-							;
+DesignatorArrName		::= (DesignatorArrName)				IDENT:dName
+							;							
 							
-Expr					::= (Expr)							Minus:m Term:t AddTerm:at
-							;
-							
-Minus					::= (MinusMinus)					MINUS
-							|
-							(MinusEpsilon)					/* epsilon */
+Expr					::= (Expr)							Term:t AddTerm:at
 							;
 					
 AddTerm					::= (AddTermTerm)					AddTerm Addop Term:t
@@ -264,14 +275,20 @@ AddTerm					::= (AddTermTerm)					AddTerm Addop Term:t
 							(AddTermEpsilon)				/* epsilon */
 							;
 							
-Term					::= (Term)							Factor:f MulFactor:mf
+Term					::= (Term)							UnFactor:f MulFactor:mf
 							;
 							
-MulFactor				::= (MulFactorFactor)				MulFactor Mulop Factor:f
+							
+MulFactor				::= (MulFactorFactor)				MulFactor Mulop UnFactor:f
 							|
 							(MulFactorEpsilon)				/* epsilon */
 							;
-							
+	
+UnFactor				::= (UnFactorMinus)					MINUS Factor:f
+							|
+							(UnFactorPlus)					Factor:f
+							;
+						
 Factor					::= (FactorConst)					TypeConst:cT
 							|
 							(FactorExpr)					LPAREN Expr:e RPAREN
@@ -279,6 +296,8 @@ Factor					::= (FactorConst)					TypeConst:cT
 							(FactorDesignator)				Designator:des
 							|
 							(FactorNew)						NEW Type:nType LBRACKET Expr:e RBRACKET
+							|
+							(FactorRange)					RANGE LPAREN Expr:e RPAREN
 							;
 							
 Addop					::= (AddopPlus)						PLUS
