@@ -54,7 +54,8 @@ scan with {:
 /* TERMINALS */
 
 /* Key words */
-terminal PROG, NAMESPACE, CONST, VOID, READ, PRINT, NEW;
+terminal PROG, CONST, VOID, READ, PRINT, NEW, RETURN;
+/* terminal NAMESPACE; */
 /* terminal STATIC; */
 
 /* Operators */
@@ -62,17 +63,19 @@ terminal ASSIGN, INC, DEC, PLUS, MINUS, MUL, DIV, MODULE;
 
 /* Control operators */
 terminal LBRACE, RBRACE, LBRACKET, RBRACKET, LPAREN, RPAREN;
-terminal SEMI, COMMA, COLON;
+terminal SEMI, COMMA;
+terminal COLON;
 
 /* Values*/
 terminal Integer NUMBER;
 terminal Integer BOOL;
-terminal String CHAR;
+terminal Character CHAR;
 terminal String IDENT;
 
 /* NONTERMINALS */
 /* Grammar */
-nonterminal Program, Namespace;
+nonterminal Program; 
+/* nonterminal Namespace; */
 nonterminal ConstDecl, VarDecl, MethodDecl;
 nonterminal Type;
 /* nonterminal StaticInitializer */
@@ -82,7 +85,7 @@ nonterminal DesignatorStatement, Designator, Expr;
 nonterminal Term, Addop, Mulop, Factor;
 
 /* Helper */
-nonterminal NamespaceMul;
+/* nonterminal NamespaceMul; */
 nonterminal Decl, DeclMul;
 nonterminal ConstDeclList, ConstDeclAssign, TypeConst;
 nonterminal VarDeclList, VarDeclaration, VarBracketsDecl, VarDeclMul;
@@ -93,19 +96,23 @@ nonterminal FormParsMul, FormParsDecl;
 nonterminal PrintParam;
 nonterminal DesExpr;
 nonterminal Minus, AddTerm, MulFactor;
+nonterminal ExprEpsilon;
 
 
-Program 				::= (Program)						PROG IDENT:progName NamespaceMul DeclMul LBRACE MethodDeclMul RBRACE
-							;
-							
+/* Program 				::= (Program)						PROG IDENT:progName NamespaceMul DeclMul LBRACE MethodDeclMul RBRACE */
+Program 				::= (Program)						PROG IDENT:progName DeclMul LBRACE MethodDeclMul RBRACE		
+						;
+/*							
 NamespaceMul			::= (NamespaceMulNamespace)			NamespaceMul Namespace
 							|
-							(NamespaceMulEpsilon)			/* epsilon */
+							(NamespaceMulEpsilon)			
 							;
 							
 Namespace				::= (Namespace)						NAMESPACE IDENT:namespaceName LBRACE DeclMul LBRACE MethodDeclMul RBRACE RBRACE
 							;
-							
+	
+*/
+						
 DeclMul					::= (DeclMulDecl)					DeclMul Decl
 							|
 							(DeclMulEpsilon)				/* epsilon */
@@ -199,16 +206,25 @@ FormParsMul				::= (FormParsMulRep)				COMMA FormParsDecl FormParsMul
 FormParsDecl			::= (FormsParsDecl)					Type:vType IDENT:vName VarBracketsDecl
 							;
 							
-Type					::= (TypeIdent)						IDENT:tName
+Type					::= (Type)						IDENT:tName
+							/* 
 							|
-							(TypeNamespace)					IDENT:nName COLON COLON IDENT:tName
+							(TypeNamespace)					IDENT:nName COLON COLON IDENT:tName 
+							*/
 							;
 						
 Statement				::= (StmtDesignatorStmt)			DesignatorStatement:des SEMI
 							|
 							(StmtRead)						READ LPAREN Designator:des RPAREN SEMI
 							|
-							(StmtPrint)						PRINT LPAREN Expr:e PrintParam RPAREN SEMI				
+							(StmtPrint)						PRINT LPAREN Expr:e PrintParam RPAREN SEMI
+							|
+							(StmtRet)						RETURN ExprEpsilon:e SEMI				
+							;
+							
+ExprEpsilon				::= (ExprEpsilonExpr)				Expr:e
+							|
+							(ExprEpsilonEpsilon)			/* epsilon */
 							;
 							
 PrintParam				::= (PrintParamNumConst)			COMMA NUMBER:num
@@ -223,9 +239,11 @@ DesignatorStatement		::= (DStmtDesAExpr)					Designator:des ASSIGN Expr:e
 							(DStmtDesDec)					Designator:des DEC
 							;
 					
-Designator 				::= (DesignatorIdent)				IDENT:dName DesExpr:e
+Designator 				::= (Designator)				IDENT:dName DesExpr:e
+							/* 
 							|
-							(DesignatorNamespace)			IDENT:nName COLON COLON IDENT:dName DesExpr:e
+							(DesignatorNamespace)			IDENT:nName COLON COLON IDENT:dName DesExpr:e 
+							*/
 							;
 							
 DesExpr					::= (DesExprExpr)					LBRACKET Expr:e RBRACKET

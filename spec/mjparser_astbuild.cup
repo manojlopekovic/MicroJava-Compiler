@@ -54,7 +54,8 @@ scan with {:
 /* TERMINALS */
 
 /* Key words */
-terminal PROG, NAMESPACE, CONST, VOID, READ, PRINT, NEW;
+terminal PROG, CONST, VOID, READ, PRINT, NEW, RETURN;
+/* terminal NAMESPACE; */
 /* terminal STATIC; */
 
 /* Operators */
@@ -62,18 +63,19 @@ terminal ASSIGN, INC, DEC, PLUS, MINUS, MUL, DIV, MODULE;
 
 /* Control operators */
 terminal LBRACE, RBRACE, LBRACKET, RBRACKET, LPAREN, RPAREN;
-terminal SEMI, COMMA, COLON;
+terminal SEMI, COMMA;
+terminal COLON;
 
 /* Values*/
 terminal Integer NUMBER;
 terminal Integer BOOL;
-terminal String CHAR;
+terminal Character CHAR;
 terminal String IDENT;
 
 /* NONTERMINALS */
 /* Grammar */
-nonterminal Program Program;
-nonterminal Namespace Namespace;
+nonterminal Program Program; 
+/* nonterminal Namespace; */
 nonterminal ConstDecl ConstDecl;
 nonterminal VarDecl VarDecl;
 nonterminal MethodDecl MethodDecl;
@@ -90,7 +92,7 @@ nonterminal Mulop Mulop;
 nonterminal Factor Factor;
 
 /* Helper */
-nonterminal NamespaceMul NamespaceMul;
+/* nonterminal NamespaceMul; */
 nonterminal Decl Decl;
 nonterminal DeclMul DeclMul;
 nonterminal ConstDeclList ConstDeclList;
@@ -110,19 +112,23 @@ nonterminal DesExpr DesExpr;
 nonterminal Minus Minus;
 nonterminal AddTerm AddTerm;
 nonterminal MulFactor MulFactor;
+nonterminal ExprEpsilon ExprEpsilon;
 
 
-Program 				::= (Program)						PROG IDENT:progName NamespaceMul:N1 DeclMul:D2 LBRACE MethodDeclMul:M3 RBRACE {: RESULT=new Program(progName, N1, D2, M3); RESULT.setLine(progNameleft); :}
-							;
-							
-NamespaceMul			::= (NamespaceMulNamespace)			NamespaceMul:N1 Namespace:N2 {: RESULT=new NamespaceMulNamespace(N1, N2); RESULT.setLine(N1left); :}
+/* Program 				::= (Program)						PROG IDENT:progName NamespaceMul DeclMul LBRACE MethodDeclMul RBRACE */
+Program 				::= (Program)						PROG IDENT:progName DeclMul:D1 LBRACE MethodDeclMul:M2 RBRACE {: RESULT=new Program(progName, D1, M2); RESULT.setLine(progNameleft); :}		
+						;
+/*							
+NamespaceMul			::= (NamespaceMulNamespace)			NamespaceMul Namespace
 							|
-							(NamespaceMulEpsilon) {: RESULT=new NamespaceMulEpsilon(); :}			/* epsilon */
+							(NamespaceMulEpsilon)			
 							;
 							
-Namespace				::= (Namespace)						NAMESPACE IDENT:namespaceName LBRACE DeclMul:D1 LBRACE MethodDeclMul:M2 RBRACE RBRACE {: RESULT=new Namespace(namespaceName, D1, M2); RESULT.setLine(namespaceNameleft); :}
+Namespace				::= (Namespace)						NAMESPACE IDENT:namespaceName LBRACE DeclMul LBRACE MethodDeclMul RBRACE RBRACE
 							;
-							
+	
+*/
+						
 DeclMul					::= (DeclMulDecl)					DeclMul:D1 Decl:D2 {: RESULT=new DeclMulDecl(D1, D2); RESULT.setLine(D1left); :}
 							|
 							(DeclMulEpsilon) {: RESULT=new DeclMulEpsilon(); :}				/* epsilon */
@@ -216,16 +222,25 @@ FormParsMul				::= (FormParsMulRep)				COMMA FormParsDecl:F1 FormParsMul:F2 {: R
 FormParsDecl			::= (FormsParsDecl)					Type:vType IDENT:vName VarBracketsDecl:V1 {: RESULT=new FormsParsDecl(vType, vName, V1); RESULT.setLine(vTypeleft); :}
 							;
 							
-Type					::= (TypeIdent)						IDENT:tName {: RESULT=new TypeIdent(tName); RESULT.setLine(tNameleft); :}
+Type					::= (Type)						IDENT:tName {: RESULT=new Type(tName); RESULT.setLine(tNameleft); :}
+							/* 
 							|
-							(TypeNamespace)					IDENT:nName COLON COLON IDENT:tName {: RESULT=new TypeNamespace(nName, tName); RESULT.setLine(nNameleft); :}
+							(TypeNamespace)					IDENT:nName COLON COLON IDENT:tName 
+							*/
 							;
 						
 Statement				::= (StmtDesignatorStmt)			DesignatorStatement:des SEMI {: RESULT=new StmtDesignatorStmt(des); RESULT.setLine(desleft); :}
 							|
 							(StmtRead)						READ LPAREN Designator:des RPAREN SEMI {: RESULT=new StmtRead(des); RESULT.setLine(desleft); :}
 							|
-							(StmtPrint)						PRINT LPAREN Expr:e PrintParam:P1 RPAREN SEMI {: RESULT=new StmtPrint(e, P1); RESULT.setLine(eleft); :}				
+							(StmtPrint)						PRINT LPAREN Expr:e PrintParam:P1 RPAREN SEMI {: RESULT=new StmtPrint(e, P1); RESULT.setLine(eleft); :}
+							|
+							(StmtRet)						RETURN ExprEpsilon:e SEMI {: RESULT=new StmtRet(e); RESULT.setLine(eleft); :}				
+							;
+							
+ExprEpsilon				::= (ExprEpsilonExpr)				Expr:e {: RESULT=new ExprEpsilonExpr(e); RESULT.setLine(eleft); :}
+							|
+							(ExprEpsilonEpsilon) {: RESULT=new ExprEpsilonEpsilon(); :}			/* epsilon */
 							;
 							
 PrintParam				::= (PrintParamNumConst)			COMMA NUMBER:num {: RESULT=new PrintParamNumConst(num); RESULT.setLine(numleft); :}
@@ -240,9 +255,11 @@ DesignatorStatement		::= (DStmtDesAExpr)					Designator:des ASSIGN Expr:e {: RES
 							(DStmtDesDec)					Designator:des DEC {: RESULT=new DStmtDesDec(des); RESULT.setLine(desleft); :}
 							;
 					
-Designator 				::= (DesignatorIdent)				IDENT:dName DesExpr:e {: RESULT=new DesignatorIdent(dName, e); RESULT.setLine(dNameleft); :}
+Designator 				::= (Designator)				IDENT:dName DesExpr:e {: RESULT=new Designator(dName, e); RESULT.setLine(dNameleft); :}
+							/* 
 							|
-							(DesignatorNamespace)			IDENT:nName COLON COLON IDENT:dName DesExpr:e {: RESULT=new DesignatorNamespace(nName, dName, e); RESULT.setLine(nNameleft); :}
+							(DesignatorNamespace)			IDENT:nName COLON COLON IDENT:dName DesExpr:e 
+							*/
 							;
 							
 DesExpr					::= (DesExprExpr)					LBRACKET Expr:e RBRACKET {: RESULT=new DesExprExpr(e); RESULT.setLine(eleft); :}

@@ -12,6 +12,9 @@ const int c = 10;
 int b, a;
 int m;
 int arr[];
+char ch;
+const char cc = 'a';
+const bool bl = true;
 {
 
 	int proba(int c, int a, int b){
@@ -22,14 +25,18 @@ int arr[];
 	int c;
 	{
 		arr = new int[3];
-		a = c;
+		a = -c;
 		print(1);
 		
-		x = y + 5;
+		read(arr[5]);
+		
+		x = -y + 5;
 		
 		m = Constants::zero + Constants::one;
 		
 		
 		print(2);
+		
+		return x;
 	}
 }

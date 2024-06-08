@@ -46,14 +46,14 @@ import java_cup.runtime.Symbol;
 "const"  						{ return new_symbol(sym.CONST, yytext());}
 "new"   						{ return new_symbol(sym.NEW, yytext());}
 "print" 						{ return new_symbol(sym.PRINT, yytext()); }
-//"return" 						{ return new_symbol(sym.RETURN, yytext()); }
+"return" 						{ return new_symbol(sym.RETURN, yytext()); }
 "void" 							{ return new_symbol(sym.VOID, yytext()); }
 "read"   						{ return new_symbol(sym.READ, yytext());}
 //"extends"   					{ return new_symbol(sym.EXTENDS, yytext());}
 //"continue"   					{ return new_symbol(sym.CONTINUE, yytext());}
 //"for"   						{ return new_symbol(sym.FOR, yytext());}
 //"static"   						{ return new_symbol(sym.STATIC, yytext());}
-"namespace"   					{ return new_symbol(sym.NAMESPACE, yytext());}
+//"namespace"   					{ return new_symbol(sym.NAMESPACE, yytext());}
 
 // Token types
 [0-9]+  						{ return new_symbol(sym.NUMBER, new Integer (yytext())); }
