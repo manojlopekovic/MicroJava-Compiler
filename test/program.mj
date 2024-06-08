@@ -1,11 +1,34 @@
 program MJProgram
-const int b = 5;
-const int m = 5;
+
+namespace Constants{
+	const int zero = 0, ten = 10;
+	const int one = 1;
+	const int hund = 100;
+	
+	{}
+}
+
+const int c = 10;
+int b, a;
+int m;
+int arr[];
 {
-	int main(){
+
+	int proba(int c, int a, int b){
+		a++;
+	}
+	
+	int main()
+	int c;
+	{
+		arr = new int[3];
+		a = c;
 		print(1);
 		
-		x = y + 5 +;
+		x = y + 5;
+		
+		m = Constants::zero + Constants::one;
+		
 		
 		print(2);
 	}

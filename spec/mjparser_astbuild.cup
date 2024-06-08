@@ -90,6 +90,7 @@ nonterminal Mulop Mulop;
 nonterminal Factor Factor;
 
 /* Helper */
+nonterminal NamespaceMul NamespaceMul;
 nonterminal Decl Decl;
 nonterminal DeclMul DeclMul;
 nonterminal ConstDeclList ConstDeclList;
@@ -111,12 +112,15 @@ nonterminal AddTerm AddTerm;
 nonterminal MulFactor MulFactor;
 
 
-Program 				::= (Program)						PROG IDENT:progName Namespace:N1 DeclMul:D2 LBRACE MethodDeclMul:M3 RBRACE {: RESULT=new Program(progName, N1, D2, M3); RESULT.setLine(progNameleft); :}
+Program 				::= (Program)						PROG IDENT:progName NamespaceMul:N1 DeclMul:D2 LBRACE MethodDeclMul:M3 RBRACE {: RESULT=new Program(progName, N1, D2, M3); RESULT.setLine(progNameleft); :}
 							;
 							
-Namespace				::= (WithNamespace)					NAMESPACE IDENT:namespaceName LBRACE DeclMul:D1 LBRACE MethodDeclMul:M2 RBRACE RBRACE {: RESULT=new WithNamespace(namespaceName, D1, M2); RESULT.setLine(namespaceNameleft); :}
+NamespaceMul			::= (NamespaceMulNamespace)			NamespaceMul:N1 Namespace:N2 {: RESULT=new NamespaceMulNamespace(N1, N2); RESULT.setLine(N1left); :}
 							|
-							(WithoutNamespace) {: RESULT=new WithoutNamespace(); :}				/* epsilon */
+							(NamespaceMulEpsilon) {: RESULT=new NamespaceMulEpsilon(); :}			/* epsilon */
+							;
+							
+Namespace				::= (Namespace)						NAMESPACE IDENT:namespaceName LBRACE DeclMul:D1 LBRACE MethodDeclMul:M2 RBRACE RBRACE {: RESULT=new Namespace(namespaceName, D1, M2); RESULT.setLine(namespaceNameleft); :}
 							;
 							
 DeclMul					::= (DeclMulDecl)					DeclMul:D1 Decl:D2 {: RESULT=new DeclMulDecl(D1, D2); RESULT.setLine(D1left); :}
@@ -156,7 +160,7 @@ VarDeclMul				::= (VarDeclMulRep)					VarDeclMul:V1 VarDecl:V2 {: RESULT=new Var
 							(VarDeclMulEpsilon) {: RESULT=new VarDeclMulEpsilon(); :}				/* epsilon */
 							;
 																					
-VarDecl					::= (VarDecl)						Type:vType VarDecl:V1 VarDeclList:V2 SEMI {: RESULT=new VarDecl(vType, V1, V2); RESULT.setLine(vTypeleft); :}
+VarDecl					::= (VarDecl)						Type:vType VarDeclaration:V1 VarDeclList:V2 SEMI {: RESULT=new VarDecl(vType, V1, V2); RESULT.setLine(vTypeleft); :}
 							;
 							
 							
@@ -246,7 +250,7 @@ DesExpr					::= (DesExprExpr)					LBRACKET Expr:e RBRACKET {: RESULT=new DesExpr
 							(DesExprEpsilon) {: RESULT=new DesExprEpsilon(); :}				/* epsilon */
 							;
 							
-Expr					::= (Expr)							Minus:M1 Term:t AddTerm:at {: RESULT=new Expr(M1, t, at); RESULT.setLine(M1left); :}
+Expr					::= (Expr)							Minus:m Term:t AddTerm:at {: RESULT=new Expr(m, t, at); RESULT.setLine(mleft); :}
 							;
 							
 Minus					::= (MinusMinus)					MINUS {: RESULT=new MinusMinus(); :}

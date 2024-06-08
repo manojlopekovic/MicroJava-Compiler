@@ -82,6 +82,7 @@ nonterminal DesignatorStatement, Designator, Expr;
 nonterminal Term, Addop, Mulop, Factor;
 
 /* Helper */
+nonterminal NamespaceMul;
 nonterminal Decl, DeclMul;
 nonterminal ConstDeclList, ConstDeclAssign, TypeConst;
 nonterminal VarDeclList, VarDeclaration, VarBracketsDecl, VarDeclMul;
@@ -94,12 +95,15 @@ nonterminal DesExpr;
 nonterminal Minus, AddTerm, MulFactor;
 
 
-Program 				::= (Program)						PROG IDENT:progName Namespace DeclMul LBRACE MethodDeclMul RBRACE
+Program 				::= (Program)						PROG IDENT:progName NamespaceMul DeclMul LBRACE MethodDeclMul RBRACE
 							;
 							
-Namespace				::= (WithNamespace)					NAMESPACE IDENT:namespaceName LBRACE DeclMul LBRACE MethodDeclMul RBRACE RBRACE
+NamespaceMul			::= (NamespaceMulNamespace)			NamespaceMul Namespace
 							|
-							(WithoutNamespace)				/* epsilon */
+							(NamespaceMulEpsilon)			/* epsilon */
+							;
+							
+Namespace				::= (Namespace)						NAMESPACE IDENT:namespaceName LBRACE DeclMul LBRACE MethodDeclMul RBRACE RBRACE
 							;
 							
 DeclMul					::= (DeclMulDecl)					DeclMul Decl
@@ -139,7 +143,7 @@ VarDeclMul				::= (VarDeclMulRep)					VarDeclMul VarDecl
 							(VarDeclMulEpsilon)				/* epsilon */
 							;
 																					
-VarDecl					::= (VarDecl)						Type:vType VarDecl VarDeclList SEMI
+VarDecl					::= (VarDecl)						Type:vType VarDeclaration VarDeclList SEMI
 							;
 							
 							
@@ -229,7 +233,7 @@ DesExpr					::= (DesExprExpr)					LBRACKET Expr:e RBRACKET
 							(DesExprEpsilon)				/* epsilon */
 							;
 							
-Expr					::= (Expr)							Minus Term:t AddTerm:at
+Expr					::= (Expr)							Minus:m Term:t AddTerm:at
 							;
 							
 Minus					::= (MinusMinus)					MINUS
