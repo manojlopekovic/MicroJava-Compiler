@@ -34,8 +34,15 @@ public class MJParserTest {
 			br = new BufferedReader(new FileReader(sourceCode));
 			Yylex lexer = new Yylex(br);
 			
+			
+			
 			MJParser p = new MJParser(lexer);
 	        Symbol s = p.parse();  //pocetak parsiranja
+	        
+	        if(lexer.errorDetected) {
+				log.info(" LEXICAL ERROR ");
+				return;
+			}
 	        
 	        Program prog = (Program)(s.value); 
 			// ispis sintaksnog stabla
