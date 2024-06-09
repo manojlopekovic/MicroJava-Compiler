@@ -54,13 +54,12 @@ scan with {:
 /* TERMINALS */
 
 /* Key words */
-terminal PROG, CONST, VOID, READ, PRINT, NEW, RETURN, RANGE, IF, ELSE, BREAK, CONTINUE, FOR, IN;
+terminal PROG, CONST, VOID, READ, PRINT, NEW, RETURN, RANGE;
 /* terminal NAMESPACE; */
 /* terminal STATIC; */
 
 /* Operators */
 terminal ASSIGN, INC, DEC, PLUS, MINUS, MUL, DIV, MODULE;
-terminal EQUALS, NOTEQUALS, GREATEREQ, GREATER, LESSEQ, LESS, LOGOR, LOGAND;
 
 /* Control operators */
 terminal LBRACE, RBRACE, LBRACKET, RBRACKET, LPAREN, RPAREN;
@@ -84,8 +83,6 @@ nonterminal Statement;
 nonterminal FormPars;
 nonterminal DesignatorStatement, Designator, Expr;
 nonterminal Term, Addop, Mulop, Factor;
-nonterminal Condition, CondFact, Relop, CondTerm;
-nonterminal ActPars;
 
 /* Helper */
 /* nonterminal NamespaceMul; */
@@ -104,12 +101,6 @@ nonterminal PrintParam;
 nonterminal AddTerm, MulFactor;
 nonterminal ExprEpsilon;
 nonterminal UnFactor;
-nonterminal Matched, Unmatched;
-nonterminal ForDecl, DesStmtList, CondFactMay, DesStmtMul;
-nonterminal RelopExpr, OrCondTerm, AndCondFact;
-nonterminal ExprList;
-nonterminal IfCond;
-/* nonterminal DesignatorComma; */
 
 
 /* Program 				::= (Program)						PROG ProgramName NamespaceMul Decl LBRACE MethodDeclMul RBRACE */
@@ -236,77 +227,16 @@ Type					::= (Type)							IDENT:tName
 							*/
 							;
 
-Statement				::= (StatementMatched)				Matched
-							|
-							(StatementUnmatched)			Unmatched
-							;
 						
-Matched					::= (StmtDesignatorStmt)			DesignatorStatement:des SEMI
+Statement				::= (StmtDesignatorStmt)			DesignatorStatement:des SEMI
 							|
 							(StmtRead)						READ LPAREN Designator:des RPAREN SEMI
 							|
 							(StmtPrint)						PRINT LPAREN Expr:e PrintParam RPAREN SEMI
 							|
 							(StmtRet)						RETURN ExprEpsilon:e SEMI
-							|
-							(StmtMatched)					IF LPAREN Condition:cond RPAREN Matched:match ELSE Matched:unmatch
-							|
-							(StmtBreak) 					BREAK SEMI
-							|
-							(StmtContinue)					CONTINUE SEMI
-							|
-							(StmtFor)						FOR LPAREN ForDecl RPAREN Matched
-							|
-							(StmtStmt)						LBRACE StatementList RBRACE
-							;
-
-Unmatched				::= (UnmatchedIf)					IF LPAREN Condition:cond RPAREN Statement:stmt
-							|
-							(UnmatchedIfElse)				IF LPAREN Condition:cond RPAREN Matched:match ELSE Unmatched:unmatch				
-							;
-
-Condition				::= (Condition)						CondTerm:ct OrCondTerm
 							;
 							
-OrCondTerm				::= (OrCondTermOr)					OrCondTerm LOGOR CondTerm:ct
-							|
-							(OrCondTermEpsilon)				/* epsilon */
-							;
-							
-CondTerm				::= (CondTerm)						CondFact:cf AndCondFact
-							;		
-
-AndCondFact				::= (AndCondFactAnd)				AndCondFact	LOGAND CondFact:cf
-							|
-							(AndCondFactEpsilon)			/* epsilon */
-							;
-
-CondFact				::= (CondFact)						Expr:e RelopExpr:re
-							;
-							
-RelopExpr				::= (RelopExprExpr)					Relop:r Expr:e
-							|
-							(RelopExprEpsilon)				/* epsilon */
-							;
-
-CondFactMay				::= (CondFactMayCond)				CondFact
-							|
-							(ConfFactMayEpsilon)			/* epsilon */
-							;							
-							
-ForDecl					::= (ForDecl)						DesStmtList SEMI CondFactMay SEMI DesStmtList
-							;
-							
-DesStmtList				::= (DesStmtListDes)				DesignatorStatement DesStmtMul
-							|
-							(DesStmtListEpsilon)			/* epsilon */
-							;
-							
-DesStmtMul				::= (DesStmtMulRep)					COMMA DesignatorStatement DesStmtMul
-							|
-							(DesStmtMulEpsilon)				/* epsilon */
-							;
-
 ExprEpsilon				::= (ExprEpsilonExpr)				Expr:e
 							|
 							(ExprEpsilonEpsilon)			/* epsilon */
@@ -322,40 +252,7 @@ DesignatorStatement		::= (DStmtDesAExpr)					Designator:des ASSIGN Expr:e
 							(DStmtDesInc)					Designator:des INC
 							|
 							(DStmtDesDec)					Designator:des DEC
-							|
-							(DStmtDesActPars)				Designator LPAREN ActPars:ap RPAREN
-							|
-							(DStmtListComp)					Designator ASSIGN LBRACKET FOR Expr:e IN Designator IfCond RBRACKET
-							/*
-							|
-							(DStmtArrayUnpack)				LBRACKET DesignatorComma MUL Designator RBRACKET ASSIGN Designator
-							*/
 							;
-
-IfCond					::= (IfCondIf)						IF Condition
-							|
-							(IfCondEpsilon)					/* epsilon */
-							;
-
-ActPars					::= (ActParsExpr)					Expr:e ExprList:el
-							|
-							(ActParsEpsilon)				/* epsilon */
-							;
-
-ExprList				::= (ExprListExpr)					ExprList COMMA Expr:e
-							|
-							(ExprListEpsilon)				/* epsilon */
-							;
-							
-/*
-DesignatorComma			::= (DesignatorCommaDes)			DesignatorComma Designator COMMA
-							|
-							(DesignatorCommaComma)			DesignatorComma COMMA
-							|
-							(DesignatorCommaEpsilon)		
-							;
-*/						
-
 					
 Designator 				::= (DesignatorVar)					IDENT:dName 
 							|
@@ -402,10 +299,7 @@ Factor					::= (FactorConst)					TypeConst:cT
 							(FactorNew)						NEW Type:nType LBRACKET Expr:e RBRACKET
 							|
 							(FactorRange)					RANGE LPAREN Expr:e RPAREN
-							|
-							(FactorDesignatorParen)			Designator:des LPAREN ActPars:ap RPAREN
 							;
-							
 							
 Addop					::= (AddopPlus)						PLUS
 							|
@@ -417,17 +311,4 @@ Mulop					::= (MulopMul)						MUL
 							(MulopDiv)						DIV
 							|
 							(MulopMod)						MODULE
-							;
-						
-Relop					::= (RelopEqals)					EQUALS
-							|
-							(RelopNotEquals)				NOTEQUALS
-							|
-							(RelopGreaterEq)				GREATEREQ
-							|
-							(RelopGreater)					GREATER
-							|
-							(RelopLessEq)					LESSEQ
-							|
-							(RelopLess)						LESS
 							;
