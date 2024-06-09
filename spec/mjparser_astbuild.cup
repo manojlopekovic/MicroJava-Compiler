@@ -152,7 +152,10 @@ Decl					::= (DeclConst)						Decl:D1 ConstDecl:C2 {: RESULT=new DeclConst(D1, C
 							*/
 							;	
 						
-ConstDecl				::= (ConstDecl)						CONST Type:vType ConstDeclAssign:C1 ConstDeclList:C2 SEMI {: RESULT=new ConstDecl(vType, C1, C2); RESULT.setLine(vTypeleft); :}
+ConstDecl				::= (ConstDeclNoErr)				CONST Type:vType ConstDeclAssign:C1 ConstDeclList:C2 SEMI {: RESULT=new ConstDeclNoErr(vType, C1, C2); RESULT.setLine(vTypeleft); :}
+							|
+							(ConstDeclErr)					CONST error:e SEMI
+							{: parser.report_error("Handling error in definition of constant till ; in line " + eleft, null);  :} {: RESULT=new ConstDeclErr(); :}
 							;		
 																					
 ConstDeclList			::= (ConstDeclListRep)				COMMA ConstDeclAssign:C1 ConstDeclList:C2 {: RESULT=new ConstDeclListRep(C1, C2); RESULT.setLine(C1left); :}
@@ -175,7 +178,10 @@ VarDeclMul				::= (VarDeclMulRep)					VarDeclMul:V1 VarDecl:V2 {: RESULT=new Var
 							(VarDeclMulEpsilon) {: RESULT=new VarDeclMulEpsilon(); :}				/* epsilon */
 							;
 																					
-VarDecl					::= (VarDecl)						Type:vType VarDeclaration:V1 VarDeclList:V2 SEMI {: RESULT=new VarDecl(vType, V1, V2); RESULT.setLine(vTypeleft); :}
+VarDecl					::= (VarDeclNoErr)					Type:vType VarDeclaration:V1 VarDeclList:V2 SEMI {: RESULT=new VarDeclNoErr(vType, V1, V2); RESULT.setLine(vTypeleft); :}
+							|
+							(VarDeclErr)					error:e SEMI
+							{: parser.report_error("Handling error in declaration of variable till ; in line " + eleft, null);  :} {: RESULT=new VarDeclErr(); :}
 							;
 							
 							

@@ -138,7 +138,10 @@ Decl					::= (DeclConst)						Decl ConstDecl
 							*/
 							;	
 						
-ConstDecl				::= (ConstDecl)						CONST Type:vType ConstDeclAssign ConstDeclList SEMI
+ConstDecl				::= (ConstDeclNoErr)				CONST Type:vType ConstDeclAssign ConstDeclList SEMI
+							|
+							(ConstDeclErr)					CONST error:e SEMI
+							{: parser.report_error("Handling error in definition of constant till ; in line " + eleft, null);  :}
 							;		
 																					
 ConstDeclList			::= (ConstDeclListRep)				COMMA ConstDeclAssign ConstDeclList
@@ -161,7 +164,10 @@ VarDeclMul				::= (VarDeclMulRep)					VarDeclMul VarDecl
 							(VarDeclMulEpsilon)				/* epsilon */
 							;
 																					
-VarDecl					::= (VarDecl)						Type:vType VarDeclaration VarDeclList SEMI
+VarDecl					::= (VarDeclNoErr)					Type:vType VarDeclaration VarDeclList SEMI
+							|
+							(VarDeclErr)					error:e SEMI
+							{: parser.report_error("Handling error in declaration of variable till ; in line " + eleft, null);  :}
 							;
 							
 							

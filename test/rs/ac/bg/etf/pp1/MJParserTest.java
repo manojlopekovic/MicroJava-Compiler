@@ -46,9 +46,15 @@ public class MJParserTest {
 			RuleVisitor v = new RuleVisitor();
 			prog.traverseBottomUp(v); 
 	      
-			log.info(" Print count calls = " + v.printCallCount);
+			if(p.errorDetected) {
+				log.info(" ERROR IN PARSING ");
+				return;
+			} else {
+				log.info(" SUCCESFULL PARSING ");
+				log.info(" Print count calls = " + v.printCallCount);
 
-			log.info(" Deklarisanih promenljivih ima = " + v.varDeclCount);
+				log.info(" Deklarisanih promenljivih ima = " + v.varDeclCount);
+			}
 		} 
 		finally {
 			if (br != null) try { br.close(); } catch (IOException e1) { log.error(e1.getMessage(), e1); }
