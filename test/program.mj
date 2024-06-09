@@ -1,42 +1,11 @@
-program MJProgram
-
-namespace Constants{
-	const int zero = 0, ten = 10;
-	const int one = 1;
-	const int hund = 100;
-	
-	{}
-}
-
-const int c = 10;
-int b, a;
-int m;
-int arr[];
-char ch;
-const char cc = 'a';
-const bool bl = true;
+program Test
+const int pi = 3;
+char carr[];
 {
 
-	int proba(int c, int a, int b){
-		a++;
+	void main(){
+		
+		a = b;
 	}
 	
-	int main()
-	int c;
-	{
-		arr = new int[3];
-		a = -c;
-		print(1);
-		
-		read(arr[5]);
-		
-		x = -y + 5;
-		
-		m = Constants::zero + Constants::one;
-		
-		
-		print(2);
-		
-		return x;
-	}
 }
