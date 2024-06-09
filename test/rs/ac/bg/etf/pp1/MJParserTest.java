@@ -50,8 +50,8 @@ public class MJParserTest {
 			log.info("===================================");
 
 			// ispis prepoznatih programskih konstrukcija
-			RuleVisitor v = new RuleVisitor();
-			prog.traverseBottomUp(v); 
+//			RuleVisitor v = new RuleVisitor();
+//			prog.traverseBottomUp(v); 
 	      
 			if(p.errorDetected) {
 				log.info(" ERROR IN PARSING ");

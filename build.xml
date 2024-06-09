@@ -9,7 +9,7 @@
 				-->
 				<exclude name="Yylex.java"/>
 				<exclude name="util/Log4JUtils.java"/>
-				<exclude name="RuleVisitor.java"/>
+				<exclude name="SemanticAnalyzer.java"/>
 			</fileset>
 		</delete>
 		<delete>

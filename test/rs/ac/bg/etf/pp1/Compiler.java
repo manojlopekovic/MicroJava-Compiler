@@ -58,6 +58,7 @@ public class Compiler {
 				return;
 			}
 			log.info(" SUCCESFULL PARSING ");
+			log.info("======================================================================\n");
 			
 			
 //			Init of Symbol Table
@@ -75,7 +76,6 @@ public class Compiler {
 			prog.traverseBottomUp(sAnalyzer);
 			
 //			Writing Symbol table
-			log.info("======================================================================");
 			Tab.dump();
 			log.info("======================================================================");
 			
