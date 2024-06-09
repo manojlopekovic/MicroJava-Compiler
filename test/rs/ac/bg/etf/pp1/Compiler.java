@@ -52,12 +52,7 @@ public class Compiler {
 			log.info(prog.toString(""));
 			log.info("======================================================================");
 
-			
-			
-			// Writing known program constructs
-//			RuleVisitor v = new RuleVisitor();
-//			prog.traverseBottomUp(v); 
-	      
+	     
 			if(p.errorDetected) {
 				log.info(" ERROR IN PARSING ");
 				return;
@@ -75,12 +70,20 @@ public class Compiler {
 			boolObj.setLevel(-1);
 			
 //			Semantic Analysis
-			
+			SemanticAnalyzer sAnalyzer = new SemanticAnalyzer();
+//			Prog is only AST tree
+			prog.traverseBottomUp(sAnalyzer);
 			
 //			Writing Symbol table
 			log.info("======================================================================");
 			Tab.dump();
 			log.info("======================================================================");
+			
+			if(!sAnalyzer.succesfull_pass()) {
+				log.info(" ERROR IN SEMANTIC ANALYSIS ");
+				return;
+			}
+			log.info(" SUCCESFULL SEMANTIC ANALYSIS ");
 			
 		} 
 		finally {
