@@ -103,7 +103,6 @@ nonterminal ConstDeclAssign ConstDeclAssign;
 nonterminal TypeConst TypeConst;
 nonterminal VarDeclList VarDeclList;
 nonterminal VarDeclaration VarDeclaration;
-nonterminal VarBracketsDecl VarBracketsDecl;
 nonterminal VarDeclMul VarDeclMul;
 nonterminal MethodDeclMul MethodDeclMul;
 nonterminal StatementList StatementList;
@@ -190,12 +189,9 @@ VarDeclList				::= (VarDeclListRep)				COMMA VarDeclaration:V1 VarDeclList:V2 {:
 							(VarDeclListEpsilon) {: RESULT=new VarDeclListEpsilon(); :}			/* epsilon */
 							;
 										
-VarDeclaration			::= (VarDeclaration)				IDENT:vName VarBracketsDecl:V1 {: RESULT=new VarDeclaration(vName, V1); RESULT.setLine(vNameleft); :}
-							;
-							
-VarBracketsDecl			::=	(VarBracketsDeclBrackets)		LBRACKET RBRACKET {: RESULT=new VarBracketsDeclBrackets(); :}
+VarDeclaration			::= (VarDeclarationVar)				IDENT:vName {: RESULT=new VarDeclarationVar(vName); RESULT.setLine(vNameleft); :}
 							|
-							(VarBracketsDeclNoBrackets) {: RESULT=new VarBracketsDeclNoBrackets(); :}		/* epsilon */
+							(VarDeclarationArray)			IDENT:arrName LBRACKET RBRACKET {: RESULT=new VarDeclarationArray(arrName); RESULT.setLine(arrNameleft); :}
 							;
 							
 /*
@@ -216,7 +212,7 @@ MethodDeclMul			::= (MethodDeclMulRep)				MethodDeclMul:M1 MethodDecl:M2 {: RESU
 							(MethodDeclMulEpsilon) {: RESULT=new MethodDeclMulEpsilon(); :}			/* epsilon */
 							;
 							
-MethodDecl				::= (Method)						TypeVoid:T1 MethodName:M2 LPAREN FormPars:F3 RPAREN VarDeclMul:V4 LBRACE StatementList:S5 RBRACE {: RESULT=new Method(T1, M2, F3, V4, S5); RESULT.setLine(T1left); :}
+MethodDecl				::= (MethodDecl)					TypeVoid:T1 MethodName:M2 LPAREN FormPars:F3 RPAREN VarDeclMul:V4 LBRACE StatementList:S5 RBRACE {: RESULT=new MethodDecl(T1, M2, F3, V4, S5); RESULT.setLine(T1left); :}
 							;
 							
 MethodName				::= (MethodName)					IDENT:mName {: RESULT=new MethodName(mName); RESULT.setLine(mNameleft); :}
@@ -237,7 +233,9 @@ FormParsMul				::= (FormParsMulRep)				COMMA FormParsDecl:F1 FormParsMul:F2 {: R
 							(FormParsMulEpsilon) {: RESULT=new FormParsMulEpsilon(); :}			/* epsilon */	
 							;
 
-FormParsDecl			::= (FormsParsDecl)					Type:vType IDENT:vName VarBracketsDecl:V1 {: RESULT=new FormsParsDecl(vType, vName, V1); RESULT.setLine(vTypeleft); :}
+FormParsDecl			::= (FormsParsDeclVar)				Type:vType IDENT:vName {: RESULT=new FormsParsDeclVar(vType, vName); RESULT.setLine(vTypeleft); :}
+							|
+							(FormsParsDeclArr)				Type:vType IDENT:vName LBRACKET RBRACKET {: RESULT=new FormsParsDeclArr(vType, vName); RESULT.setLine(vTypeleft); :}
 							;
 							
 Type					::= (Type)							IDENT:tName {: RESULT=new Type(tName); RESULT.setLine(tNameleft); :}

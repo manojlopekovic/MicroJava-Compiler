@@ -1,9 +1,14 @@
 program Test
 const int pi = 3;
 char carr[];
+
+int x, y[];
 {
 
-	void main(){
+	void main()
+	int a, b[];
+	int x;
+	{
 		
 		a = b;
 	}

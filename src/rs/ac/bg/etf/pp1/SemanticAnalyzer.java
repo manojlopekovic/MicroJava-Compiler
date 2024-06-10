@@ -16,6 +16,8 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	private int constant;
 	private Struct constantType;
 	private Struct boolType = Tab.find("bool").getType();
+	private boolean ismain = false;
+	private Obj currentMethod;
 
 //	Semantic pass code
 //****************************************************************************************************************
@@ -27,6 +29,9 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 //		If we do find, it will take [name] from current scope
 		Tab.chainLocalSymbols(myProg);
 		Tab.closeScope();
+		myProg = null;
+		if(!ismain)
+			error_report("No main method", program);
 	}
 	
 	@Override
@@ -35,6 +40,59 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 		myProg = Tab.insert(Obj.Prog, programName.getPName(), Tab.noType);
 		Tab.openScope();
 	}
+	
+//	Var declarations
+	@Override
+	public void visit(VarDeclarationVar varDeclarationVar) {
+		Obj varObj = null;
+		if(currentMethod == null) {
+			varObj = Tab.find(varDeclarationVar.getVName());
+		} else {
+//			Finds in all scopes, not just open one
+			varObj = Tab.currentScope().findSymbol(varDeclarationVar.getVName());
+		}
+		if(varObj != null)
+			if(varObj != Tab.noObj) {
+				error_report("Double declaration of variable: " + varDeclarationVar.getVName(), varDeclarationVar);
+				return;
+			} 
+		Tab.insert(Obj.Var, varDeclarationVar.getVName(), currentType);
+	}
+	
+	@Override
+	public void visit(VarDeclarationArray varDeclarationArray) {
+		Obj varObj = null;
+		if(currentMethod == null) {
+			varObj = Tab.find(varDeclarationArray.getArrName());
+		} else {
+			varObj = Tab.currentScope().findSymbol(varDeclarationArray.getArrName());
+		}
+		if(varObj != null)
+			if(varObj != Tab.noObj) {
+				error_report("Double declaration of array: " + varDeclarationArray.getArrName(), varDeclarationArray);
+				return;
+			} 
+		Tab.insert(Obj.Var, varDeclarationArray.getArrName(), new Struct(Struct.Array, currentType));
+	}
+	
+//	Method declarations
+	public void visit(MethodName methodName) {
+//		For A, we don't have to check if multiple methods
+		if(methodName.getMName().equalsIgnoreCase("main")) 
+			ismain  = true;			
+		currentMethod = Tab.insert(Obj.Meth, methodName.getMName(), Tab.noType);
+		Tab.openScope();
+	}
+	
+	@Override
+	public void visit(MethodDecl methodDecl) {
+		Tab.chainLocalSymbols(currentMethod);
+		Tab.closeScope();
+		currentMethod = null;
+	}
+	
+	
+//	Constant declaration
 
 	@Override
 	public void visit(Type type) {
