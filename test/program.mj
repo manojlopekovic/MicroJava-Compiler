@@ -9,8 +9,16 @@ int x, y[];
 	int a, b[];
 	int x;
 	{
+	
+		x = b[1] * a;
 		
-		a = b;
+		print(true);
+		print('a');
+		print(3);
+		print(b[5]);
+		//print(carr['5']);
+		
+		a = a * a;
 	}
 	
 }

@@ -19,7 +19,189 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	private boolean ismain = false;
 	private Obj currentMethod;
 
-//	Semantic pass code
+
+//	Semantic pass code, context conditions
+//****************************************************************************************************************
+
+//	Expr, Term
+	
+	@Override
+	public void visit(MulFactorFactor mulFactorFactor) {
+		if(mulFactorFactor.getMulFactor() instanceof MulFactorFactor) {
+			if(!mulFactorFactor.getMulFactor().struct.equals(Tab.intType)) {
+				error_report("Trying to assign non-int value: " + mulFactorFactor.getMulFactor().struct + " in multiplication operation", mulFactorFactor);
+				mulFactorFactor.struct = Tab.noType;
+				return;
+			}
+		}
+		if(!mulFactorFactor.getFactor().struct.equals(Tab.intType)) {
+			error_report("Trying to assign non-int value: " + mulFactorFactor.getFactor().struct + " in multiplication operation", mulFactorFactor);
+			mulFactorFactor.struct = Tab.noType;
+			return;
+		}
+		mulFactorFactor.struct = Tab.intType;
+	}
+	
+	@Override
+	public void visit(Term term) {
+		if(term.getMulFactor() instanceof MulFactorFactor) {
+			if(!term.getMulFactor().struct.equals(Tab.intType)) {
+				error_report("Trying to assign non-int value: " + term.getMulFactor().struct + "  in term", term);
+				term.struct = Tab.noType;
+				return;
+			} 
+			if(!term.getFactor().struct.equals(Tab.intType)) {
+				error_report("Trying to assign non-int value: " + term.getFactor().struct + "  in term", term);
+				term.struct = Tab.noType;
+				return;
+			}
+		}
+		term.struct = term.getFactor().struct;
+	}
+	
+	@Override
+	public void visit(AddTermTerm addTermTerm) {
+		if(addTermTerm.getAddTerm() instanceof AddTermTerm) {
+			if(!addTermTerm.getAddTerm().struct.equals(Tab.intType)) {
+				error_report("Trying to assign non-int value: " + addTermTerm.getAddTerm().struct + " in multiplication operation", addTermTerm);
+				addTermTerm.struct = Tab.noType;
+				return;
+			}
+		}
+		if(!addTermTerm.getTerm().struct.equals(Tab.intType)) {
+			error_report("Trying to assign non-int value: " + addTermTerm.getTerm().struct + " in multiplication operation", addTermTerm);
+			addTermTerm.struct = Tab.noType;
+			return;
+		}
+		addTermTerm.struct = Tab.intType;
+		
+	}
+	
+	@Override
+	public void visit(Expr expr) {
+		if(expr.getAddTerm() instanceof AddTermTerm) {
+			if(!expr.getAddTerm().struct.equals(Tab.intType)) {
+				error_report("Trying to assign non-int value: " + expr.getAddTerm().struct + "  in term", expr);
+				expr.struct = Tab.noType;
+				return;
+			} 
+			if(!expr.getTerm().struct.equals(Tab.intType)) {
+				error_report("Trying to assign non-int value: " + expr.getTerm().struct + "  in term", expr);
+				expr.struct = Tab.noType;
+				return;
+			}
+		}
+		expr.struct = expr.getTerm().struct;
+	}
+	
+//	Designator
+	
+	@Override
+	public void visit(DesignatorVar designatorVar) {
+		Obj desObj = Tab.find(designatorVar.getDName());
+		if(desObj == Tab.noObj) {
+			error_report("Accessing undefined var: " + designatorVar.getDName(), designatorVar);
+			designatorVar.obj = Tab.noObj;
+			return;
+		} 
+		if(desObj.getKind() != Obj.Var && desObj.getKind() != Obj.Con) {
+			error_report("Unadequate variable: " + designatorVar.getDName(), designatorVar);
+			designatorVar.obj = Tab.noObj;
+			return;			
+		}
+		designatorVar.obj = desObj;
+	}
+	
+	@Override
+	public void visit(DesignatorArr designatorArr) {
+		if(designatorArr.getDesignatorArrName().obj == Tab.noObj) {
+			designatorArr.obj = Tab.noObj;
+			return;
+		}
+		if(!designatorArr.getExpr().struct.equals(Tab.intType)) {
+			error_report("Indexing with non-int value", designatorArr);
+			designatorArr.obj = Tab.noObj;
+		}
+//		In runtime for [$]
+		designatorArr.obj = new Obj(Obj.Elem, designatorArr.getDesignatorArrName().obj.getName() + "[$]", designatorArr.getDesignatorArrName().obj.getType().getElemType());
+	}
+	
+	@Override
+	public void visit(DesignatorArrName designatorArrName) {
+//		int niz[];
+//		visit(niz) -> obj(var[niz]) -> strukt arr -> strukt int
+//		niz[5];
+//		visit niz[] -> elem(strukt int)
+		Obj desObj = Tab.find(designatorArrName.getDName());
+		if(desObj == Tab.noObj) {
+			error_report("Accessing undefined var, array: " + designatorArrName.getDName(), designatorArrName);
+			designatorArrName.obj = Tab.noObj;
+			return;
+		} 
+		if(desObj.getKind() != Obj.Var || desObj.getType().getKind() != Struct.Array) {
+			error_report("Unadequate variable, not array: " + designatorArrName.getDName(), designatorArrName);
+			designatorArrName.obj = Tab.noObj;
+			return;			
+		}
+		designatorArrName.obj = desObj;
+		
+	}
+
+//	Factor
+	
+	@Override
+	public void visit(FactorOpNew factorOpNew) {
+		if(!factorOpNew.getExpr().struct.equals(Tab.intType)) {
+			error_report("Size of array is not of integer type", factorOpNew);
+			factorOpNew.struct = Tab.noType;
+			return;
+		}
+//		As we previously defined, type is saved to local variable when it's visited
+		factorOpNew.struct = new Struct(Struct.Array, currentType);
+	}
+	
+	@Override
+	public void visit(FactorOpExpr factorOpExpr) {
+		factorOpExpr.struct = factorOpExpr.getExpr().struct;
+	}
+
+	@Override
+	public void visit(FactorOpBool factorBool) {
+		factorBool.struct = boolType;
+	}
+
+	@Override
+	public void visit(FactorOpNumber factorNumber) {
+		factorNumber.struct = Tab.intType;
+	}
+	@Override
+	public void visit(FactorOpDesignator factorOpDesignator) {
+		factorOpDesignator.struct = factorOpDesignator.getDesignator().obj.getType();
+	}
+	
+	@Override
+	public void visit(FactorOpChar factorChar) {
+		factorChar.struct = Tab.charType;
+	}
+
+	
+	@Override
+	public void visit(Factor factor) {
+		if(factor.getFactorSign() instanceof FactorSignMinus) {
+			if(factor.getFactorOp().struct.equals(Tab.intType)) {
+				factor.struct = Tab.intType;
+			} else {
+				error_report("Negation of non integer value: " + factor.getFactorOp().struct.toString(), factor);
+				factor.struct = Tab.noType;
+			}
+		} else {
+			factor.struct = factor.getFactorOp().struct;
+		}
+	}
+	
+	
+//****************************************************************************************************************
+//	Semantic pass code, symbol table
 //****************************************************************************************************************
 	
 //	Always for concrete classes, not abstract

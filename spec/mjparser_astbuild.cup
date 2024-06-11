@@ -84,12 +84,10 @@ nonterminal Type Type;
 nonterminal Statement Statement;
 nonterminal FormPars FormPars;
 nonterminal DesignatorStatement DesignatorStatement;
-nonterminal Designator Designator;
-nonterminal Expr Expr;
-nonterminal Term Term;
 nonterminal Addop Addop;
 nonterminal Mulop Mulop;
-nonterminal Factor Factor;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct Factor, Expr, Term;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj Designator;
 
 /* Helper */
 /* nonterminal NamespaceMul; */
@@ -97,7 +95,6 @@ nonterminal Decl Decl;
 /* nonterminal DeclMul; */
 nonterminal ProgramName ProgramName;
 nonterminal MethodName MethodName;
-nonterminal DesignatorArrName DesignatorArrName;
 nonterminal ConstDeclList ConstDeclList;
 nonterminal ConstDeclAssign ConstDeclAssign;
 nonterminal TypeConst TypeConst;
@@ -110,10 +107,10 @@ nonterminal TypeVoid TypeVoid;
 nonterminal FormParsMul FormParsMul;
 nonterminal FormParsDecl FormParsDecl;
 nonterminal PrintParam PrintParam;
-nonterminal AddTerm AddTerm;
-nonterminal MulFactor MulFactor;
-nonterminal ExprEpsilon ExprEpsilon;
-nonterminal UnFactor UnFactor;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct FactorOp, ExprEpsilon, AddTerm, MulFactor;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj DesignatorArrName;
+nonterminal FactorSign FactorSign;
+
 
 
 /* Program 				::= (Program)						PROG ProgramName NamespaceMul Decl LBRACE MethodDeclMul RBRACE */
@@ -294,30 +291,38 @@ AddTerm					::= (AddTermTerm)					AddTerm:A1 Addop:A2 Term:t {: RESULT=new AddTe
 							(AddTermEpsilon) {: RESULT=new AddTermEpsilon(); :}				/* epsilon */
 							;
 							
-Term					::= (Term)							UnFactor:f MulFactor:mf {: RESULT=new Term(f, mf); RESULT.setLine(fleft); :}
+Term					::= (Term)							Factor:F1 MulFactor:mf {: RESULT=new Term(F1, mf); RESULT.setLine(F1left); :}
 							;
 							
 							
-MulFactor				::= (MulFactorFactor)				MulFactor:M1 Mulop:M2 UnFactor:f {: RESULT=new MulFactorFactor(M1, M2, f); RESULT.setLine(M1left); :}
+MulFactor				::= (MulFactorFactor)				MulFactor:M1 Mulop:M2 Factor:F3 {: RESULT=new MulFactorFactor(M1, M2, F3); RESULT.setLine(M1left); :}
 							|
 							(MulFactorEpsilon) {: RESULT=new MulFactorEpsilon(); :}				/* epsilon */
 							;
 	
-UnFactor				::= (UnFactorMinus)					MINUS Factor:f {: RESULT=new UnFactorMinus(f); RESULT.setLine(fleft); :}
+Factor					::= (Factor)						FactorSign:F1 FactorOp:F2 {: RESULT=new Factor(F1, F2); RESULT.setLine(F1left); :}
+							;	
+	
+FactorSign				::= (FactorSignMinus)				MINUS {: RESULT=new FactorSignMinus(); :} 
 							|
-							(UnFactorPlus)					Factor:f {: RESULT=new UnFactorPlus(f); RESULT.setLine(fleft); :}
+							(FactorSignPlus) {: RESULT=new FactorSignPlus(); :}				/* epsilon */
 							;
 						
-Factor					::= (FactorConst)					TypeConst:cT {: RESULT=new FactorConst(cT); RESULT.setLine(cTleft); :}
+FactorOp				::= (FactorOpChar) 					CHAR:factVal {: RESULT=new FactorOpChar(factVal); RESULT.setLine(factValleft); :}
 							|
-							(FactorExpr)					LPAREN Expr:e RPAREN {: RESULT=new FactorExpr(e); RESULT.setLine(eleft); :}
+							(FactorOpNumber)				NUMBER:factVal {: RESULT=new FactorOpNumber(factVal); RESULT.setLine(factValleft); :}
 							|
-							(FactorDesignator)				Designator:des {: RESULT=new FactorDesignator(des); RESULT.setLine(desleft); :}
+							(FactorOpBool)					BOOL:factVal {: RESULT=new FactorOpBool(factVal); RESULT.setLine(factValleft); :}
 							|
-							(FactorNew)						NEW Type:nType LBRACKET Expr:e RBRACKET {: RESULT=new FactorNew(nType, e); RESULT.setLine(nTypeleft); :}
+							(FactorOpExpr)					LPAREN Expr:e RPAREN {: RESULT=new FactorOpExpr(e); RESULT.setLine(eleft); :}
 							|
-							(FactorRange)					RANGE LPAREN Expr:e RPAREN {: RESULT=new FactorRange(e); RESULT.setLine(eleft); :}
+							(FactorOpDesignator)			Designator:des {: RESULT=new FactorOpDesignator(des); RESULT.setLine(desleft); :}
+							|
+							(FactorOpNew)					NEW Type:nType LBRACKET Expr:e RBRACKET {: RESULT=new FactorOpNew(nType, e); RESULT.setLine(nTypeleft); :}
+							|
+							(FactorOpRange)					RANGE LPAREN Expr:e RPAREN {: RESULT=new FactorOpRange(e); RESULT.setLine(eleft); :}
 							;
+
 							
 Addop					::= (AddopPlus)						PLUS {: RESULT=new AddopPlus(); :}
 							|

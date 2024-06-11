@@ -81,8 +81,10 @@ nonterminal Type;
 /* nonterminal StaticInitializer */
 nonterminal Statement;
 nonterminal FormPars;
-nonterminal DesignatorStatement, Designator, Expr;
-nonterminal Term, Addop, Mulop, Factor;
+nonterminal DesignatorStatement;
+nonterminal Addop, Mulop;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct Factor, Expr, Term;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj Designator;
 
 /* Helper */
 /* nonterminal NamespaceMul; */
@@ -90,7 +92,6 @@ nonterminal Decl;
 /* nonterminal DeclMul; */
 nonterminal ProgramName;
 nonterminal MethodName;
-nonterminal DesignatorArrName;
 nonterminal ConstDeclList, ConstDeclAssign, TypeConst;
 nonterminal VarDeclList, VarDeclaration, VarDeclMul;
 nonterminal MethodDeclMul;
@@ -98,9 +99,10 @@ nonterminal StatementList;
 nonterminal TypeVoid;
 nonterminal FormParsMul, FormParsDecl;
 nonterminal PrintParam;
-nonterminal AddTerm, MulFactor;
-nonterminal ExprEpsilon;
-nonterminal UnFactor;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct FactorOp, ExprEpsilon, AddTerm, MulFactor;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj DesignatorArrName;
+nonterminal FactorSign;
+
 
 
 /* Program 				::= (Program)						PROG ProgramName NamespaceMul Decl LBRACE MethodDeclMul RBRACE */
@@ -281,30 +283,37 @@ AddTerm					::= (AddTermTerm)					AddTerm Addop Term:t
 							(AddTermEpsilon)				/* epsilon */
 							;
 							
-Term					::= (Term)							UnFactor:f MulFactor:mf
+Term					::= (Term)							Factor MulFactor:mf
 							;
-							
-							
-MulFactor				::= (MulFactorFactor)				MulFactor Mulop UnFactor:f
+												
+MulFactor				::= (MulFactorFactor)				MulFactor Mulop Factor
 							|
 							(MulFactorEpsilon)				/* epsilon */
 							;
 	
-UnFactor				::= (UnFactorMinus)					MINUS Factor:f
+Factor					::= (Factor)						FactorSign FactorOp
+							;	
+	
+FactorSign				::= (FactorSignMinus)				MINUS 
 							|
-							(UnFactorPlus)					Factor:f
+							(FactorSignPlus)				/* epsilon */
 							;
 						
-Factor					::= (FactorConst)					TypeConst:cT
+FactorOp				::= (FactorOpChar) 					CHAR:factVal
 							|
-							(FactorExpr)					LPAREN Expr:e RPAREN
+							(FactorOpNumber)				NUMBER:factVal
 							|
-							(FactorDesignator)				Designator:des
+							(FactorOpBool)					BOOL:factVal
 							|
-							(FactorNew)						NEW Type:nType LBRACKET Expr:e RBRACKET
+							(FactorOpExpr)					LPAREN Expr:e RPAREN
 							|
-							(FactorRange)					RANGE LPAREN Expr:e RPAREN
+							(FactorOpDesignator)			Designator:des
+							|
+							(FactorOpNew)					NEW Type:nType LBRACKET Expr:e RBRACKET
+							|
+							(FactorOpRange)					RANGE LPAREN Expr:e RPAREN
 							;
+
 							
 Addop					::= (AddopPlus)						PLUS
 							|
