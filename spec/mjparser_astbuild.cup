@@ -79,7 +79,7 @@ nonterminal Program Program;
 nonterminal ConstDecl ConstDecl;
 nonterminal VarDecl VarDecl;
 nonterminal MethodDecl MethodDecl;
-nonterminal Type Type;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct Type;
 /* nonterminal StaticInitializer */
 nonterminal Statement Statement;
 nonterminal FormPars FormPars;
@@ -88,7 +88,6 @@ nonterminal Addop Addop;
 nonterminal Mulop Mulop;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct Factor, Expr, Term;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj Designator;
-
 /* Helper */
 /* nonterminal NamespaceMul; */
 nonterminal Decl Decl;
@@ -97,7 +96,7 @@ nonterminal ProgramName ProgramName;
 nonterminal MethodName MethodName;
 nonterminal ConstDeclList ConstDeclList;
 nonterminal ConstDeclAssign ConstDeclAssign;
-nonterminal TypeConst TypeConst;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct TypeConst;
 nonterminal VarDeclList VarDeclList;
 nonterminal VarDeclaration VarDeclaration;
 nonterminal VarDeclMul VarDeclMul;
@@ -106,7 +105,6 @@ nonterminal StatementList StatementList;
 nonterminal TypeVoid TypeVoid;
 nonterminal FormParsMul FormParsMul;
 nonterminal FormParsDecl FormParsDecl;
-nonterminal PrintParam PrintParam;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct FactorOp, ExprEpsilon, AddTerm, MulFactor;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj DesignatorArrName;
 nonterminal FactorSign FactorSign;
@@ -247,7 +245,9 @@ Statement				::= (StmtDesignatorStmt)			DesignatorStatement:des SEMI {: RESULT=n
 							|
 							(StmtRead)						READ LPAREN Designator:des RPAREN SEMI {: RESULT=new StmtRead(des); RESULT.setLine(desleft); :}
 							|
-							(StmtPrint)						PRINT LPAREN Expr:e PrintParam:P1 RPAREN SEMI {: RESULT=new StmtPrint(e, P1); RESULT.setLine(eleft); :}
+							(StmtPrintExpr)					PRINT LPAREN Expr:e RPAREN SEMI {: RESULT=new StmtPrintExpr(e); RESULT.setLine(eleft); :}
+							|
+							(StmtPrintNum)					PRINT LPAREN Expr:e COMMA NUMBER:num RPAREN SEMI {: RESULT=new StmtPrintNum(e, num); RESULT.setLine(eleft); :}
 							|
 							(StmtRet)						RETURN ExprEpsilon:e SEMI {: RESULT=new StmtRet(e); RESULT.setLine(eleft); :}
 							;
@@ -255,11 +255,6 @@ Statement				::= (StmtDesignatorStmt)			DesignatorStatement:des SEMI {: RESULT=n
 ExprEpsilon				::= (ExprEpsilonExpr)				Expr:e {: RESULT=new ExprEpsilonExpr(e); RESULT.setLine(eleft); :}
 							|
 							(ExprEpsilonEpsilon) {: RESULT=new ExprEpsilonEpsilon(); :}			/* epsilon */
-							;
-							
-PrintParam				::= (PrintParamNumConst)			COMMA NUMBER:num {: RESULT=new PrintParamNumConst(num); RESULT.setLine(numleft); :}
-							|
-							(PrintParamEpsilon) {: RESULT=new PrintParamEpsilon(); :}				/* epsilon */
 							;
 							
 DesignatorStatement		::= (DStmtDesAExpr)					Designator:des ASSIGN Expr:e {: RESULT=new DStmtDesAExpr(des, e); RESULT.setLine(desleft); :}
@@ -293,8 +288,7 @@ AddTerm					::= (AddTermTerm)					AddTerm:A1 Addop:A2 Term:t {: RESULT=new AddTe
 							
 Term					::= (Term)							Factor:F1 MulFactor:mf {: RESULT=new Term(F1, mf); RESULT.setLine(F1left); :}
 							;
-							
-							
+												
 MulFactor				::= (MulFactorFactor)				MulFactor:M1 Mulop:M2 Factor:F3 {: RESULT=new MulFactorFactor(M1, M2, F3); RESULT.setLine(M1left); :}
 							|
 							(MulFactorEpsilon) {: RESULT=new MulFactorEpsilon(); :}				/* epsilon */

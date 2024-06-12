@@ -77,7 +77,7 @@ terminal String IDENT;
 nonterminal Program; 
 /* nonterminal Namespace; */
 nonterminal ConstDecl, VarDecl, MethodDecl;
-nonterminal Type;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct Type;
 /* nonterminal StaticInitializer */
 nonterminal Statement;
 nonterminal FormPars;
@@ -85,20 +85,19 @@ nonterminal DesignatorStatement;
 nonterminal Addop, Mulop;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct Factor, Expr, Term;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj Designator;
-
 /* Helper */
 /* nonterminal NamespaceMul; */
 nonterminal Decl;
 /* nonterminal DeclMul; */
 nonterminal ProgramName;
 nonterminal MethodName;
-nonterminal ConstDeclList, ConstDeclAssign, TypeConst;
+nonterminal ConstDeclList, ConstDeclAssign;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct TypeConst;
 nonterminal VarDeclList, VarDeclaration, VarDeclMul;
 nonterminal MethodDeclMul;
 nonterminal StatementList;
 nonterminal TypeVoid;
 nonterminal FormParsMul, FormParsDecl;
-nonterminal PrintParam;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct FactorOp, ExprEpsilon, AddTerm, MulFactor;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj DesignatorArrName;
 nonterminal FactorSign;
@@ -239,7 +238,9 @@ Statement				::= (StmtDesignatorStmt)			DesignatorStatement:des SEMI
 							|
 							(StmtRead)						READ LPAREN Designator:des RPAREN SEMI
 							|
-							(StmtPrint)						PRINT LPAREN Expr:e PrintParam RPAREN SEMI
+							(StmtPrintExpr)					PRINT LPAREN Expr:e RPAREN SEMI
+							|
+							(StmtPrintNum)					PRINT LPAREN Expr:e COMMA NUMBER:num RPAREN SEMI
 							|
 							(StmtRet)						RETURN ExprEpsilon:e SEMI
 							;
@@ -247,11 +248,6 @@ Statement				::= (StmtDesignatorStmt)			DesignatorStatement:des SEMI
 ExprEpsilon				::= (ExprEpsilonExpr)				Expr:e
 							|
 							(ExprEpsilonEpsilon)			/* epsilon */
-							;
-							
-PrintParam				::= (PrintParamNumConst)			COMMA NUMBER:num
-							|
-							(PrintParamEpsilon)				/* epsilon */
 							;
 							
 DesignatorStatement		::= (DStmtDesAExpr)					Designator:des ASSIGN Expr:e
