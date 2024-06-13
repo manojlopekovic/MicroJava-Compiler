@@ -10,6 +10,7 @@
 				<exclude name="Yylex.java"/>
 				<exclude name="util/Log4JUtils.java"/>
 				<exclude name="SemanticAnalyzer.java"/>
+				<exclude name="CodeGen.java"/>
 			</fileset>
 		</delete>
 		<delete>
@@ -58,8 +59,37 @@
 				<pathelement path="lib/cup_v10k.jar"/>
 				<pathelement path="lib/log4j-1.2.17.jar"/>
 				<pathelement path="lib/symboltable-1-1.jar"/>
+				<pathelement path="lib/mj-runtime-1.1.jar"/>
 			</classpath>
 		</javac>
+	</target>
+	
+	<target name="disasm">
+		<java classname="rs.etf.pp1.mj.runtime.disasm">
+			<arg value="prog.obj"/>
+			<classpath>
+				<pathelement location="lib/mj-runtime-1.1.jar"/>
+			</classpath>
+		</java>
+	</target>
+	
+	<target name="debug" depends="disasm">
+		<java classname="rs.etf.pp1.mj.runtime.Run" input="test/entry.txt">
+			<arg value="prog.obj"/>
+			<arg value="-debug"/>
+			<classpath>
+				<pathelement location="lib/mj-runtime-1.1.jar"/>
+			</classpath>
+		</java>
+	</target>
+	
+	<target name="run" depends="debug">
+		<java classname="rs.etf.pp1.mj.runtime.Run" input="test/entry.txt">
+			<arg value="prog.obj"/>
+			<classpath>
+				<pathelement location="lib/mj-runtime-1.1.jar"/>
+			</classpath>
+		</java>
 	</target>
 	
 </project>

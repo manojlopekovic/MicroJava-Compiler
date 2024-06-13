@@ -85,12 +85,13 @@ nonterminal DesignatorStatement;
 nonterminal Addop, Mulop;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct Factor, Expr, Term;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj Designator;
+
 /* Helper */
 /* nonterminal NamespaceMul; */
 nonterminal Decl;
 /* nonterminal DeclMul; */
 nonterminal ProgramName;
-nonterminal MethodName;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj MethodName;
 nonterminal ConstDeclList, ConstDeclAssign;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct TypeConst;
 nonterminal VarDeclList, VarDeclaration, VarDeclMul;

@@ -23,8 +23,10 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	private Struct noType = Tab.noType;
 	private boolean ismain = false;
 	private Obj currentMethod;
+	private int nVars;
 
 
+//****************************************************************************************************************
 //	Semantic pass code, context conditions
 //****************************************************************************************************************
 
@@ -299,24 +301,6 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 //	Semantic pass code, symbol table
 //****************************************************************************************************************
 	
-//	Always for concrete classes, not abstract
-	@Override
-	public void visit(Program program) {
-//		Closing scope on end
-//		If we do find, it will take [name] from current scope
-		Tab.chainLocalSymbols(myProg);
-		Tab.closeScope();
-		myProg = null;
-		if(!ismain)
-			error_report("No main method in the program", program);
-	}
-	
-	@Override
-	public void visit(ProgramName programName) {
-//		Creating program scope
-		myProg = Tab.insert(Obj.Prog, programName.getPName(), noType);
-		Tab.openScope();
-	}
 	
 //	Var declarations
 	@Override
@@ -387,7 +371,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 			}
 			ismain = true;
 		}			
-		currentMethod = Tab.insert(Obj.Meth, methodName.getMName(), noType);
+		methodName.obj = currentMethod = Tab.insert(Obj.Meth, methodName.getMName(), noType);
 		Tab.openScope();
 	}
 	
@@ -459,10 +443,31 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 		info_report("Constant declaration: " + constDeclAssign.getVName(), constDeclAssign);
 	}
 	
+//	Always for concrete classes, not abstract
+	@Override
+	public void visit(Program program) {
+//		We must count global variables
+		nVars = Tab.currentScope().getnVars();
+		
+//		Closing scope on end
+//		If we do find, it will take [name] from current scope
+		Tab.chainLocalSymbols(myProg);
+		Tab.closeScope();
+		myProg = null;
+		if(!ismain)
+			error_report("No main method in the program", program);
+	}
+	
+	@Override
+	public void visit(ProgramName programName) {
+//		Creating program scope
+		myProg = Tab.insert(Obj.Prog, programName.getPName(), noType);
+		Tab.openScope();
+	}
 	
 	
 //****************************************************************************************************************	
-//	Semantic reporting code
+//	Semantic reporting code, and helper functions
 //****************************************************************************************************************
 	private boolean errDetected = false;
 	Logger log = Logger.getLogger(getClass());
@@ -484,6 +489,10 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	
 	public boolean succesfull_pass() {
 		return !errDetected;
+	}
+	
+	public int getNVars() {
+		return nVars;
 	}
 //****************************************************************************************************************
 }

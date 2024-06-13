@@ -1,44 +1,17 @@
 program Test
-const int pi = 3, e = 2;
-const char letterA = 'a';
-char carr[];
 
-int x, y[];
-char c;
+const int pi = 3;
+int a, b[];
 {
 
 	void main()
-	int a, b[];
-	int x;
+	int x, y;
+	char z;
 	{
 	
-		x = b[1] * a;
-		
-		print(true);
+		print(14 % 5);
 		print('a');
-		print (b);
-		//print(b);
-		print(b[5], 3);
-		//print(carr['5']);
-		
-		//read(b);
-		read(b[5]);
-		
-		
-		a = a * a;
-		
-		x = b[1];
-		
-		// pi = 4;
-		b = new int[5];
-		b[1] = 5;
-		b[1] = y[6];
-		b = null;
-		//b++;
-		b[1]++;
-		x--;
-		//carr--;
-		//carr[1]--;
 		
 	}
+
 }

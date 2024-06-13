@@ -2,9 +2,11 @@ package rs.ac.bg.etf.pp1;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Scanner;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
@@ -12,6 +14,7 @@ import org.apache.log4j.xml.DOMConfigurator;
 import java_cup.runtime.Symbol;
 import rs.ac.bg.etf.pp1.ast.Program;
 import rs.ac.bg.etf.pp1.util.Log4JUtils;
+import rs.etf.pp1.mj.runtime.Code;
 import rs.etf.pp1.symboltable.Tab;
 import rs.etf.pp1.symboltable.concepts.Obj;
 import rs.etf.pp1.symboltable.concepts.Struct;
@@ -30,7 +33,7 @@ public class Compiler {
 		
 		Reader br = null;
 		try {
-			File sourceCode = new File("test/test301.mj");
+			File sourceCode = new File("test/program.mj");
 			log.info("Compiling source file: " + sourceCode.getAbsolutePath());
 			
 			br = new BufferedReader(new FileReader(sourceCode));
@@ -84,6 +87,28 @@ public class Compiler {
 				return;
 			}
 			log.info(" SUCCESFULL SEMANTIC ANALYSIS ");
+			log.info("======================================================================\n\n");
+			
+//			Generating code
+//			Scanner scanner = new Scanner(System.in);
+//			System.out.println("Enter name of bytecode file:");
+//			String fileNameString = scanner.nextLine();
+//			String filePathString = "./" + fileNameString + ".obj";
+			File file = new File("./prog.obj");
+			if(file.exists()) 
+				file.delete();
+			
+			CodeGen codeGen = new CodeGen();
+			prog.traverseBottomUp(codeGen);
+			Code.dataSize = sAnalyzer.getNVars();
+			Code.mainPc = codeGen.mainPcVal();
+			Code.write(new FileOutputStream(file));
+
+			log.info("Generating file: prog.obj");
+			log.info("======================================================================");
+			log.info(" SUCCESFULL CODE GENERATION ");
+			log.info("======================================================================");
+//	        scanner.close();
 			
 		} 
 		finally {
