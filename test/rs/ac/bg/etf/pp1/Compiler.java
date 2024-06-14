@@ -101,7 +101,7 @@ public class Compiler {
 			CodeGen codeGen = new CodeGen();
 			prog.traverseBottomUp(codeGen);
 			Code.dataSize = sAnalyzer.getNVars();
-			Code.mainPc = codeGen.mainPcVal();
+			Code.mainPc = codeGen.getStartAddr();
 			Code.write(new FileOutputStream(file));
 
 			log.info("Generating file: prog.obj");

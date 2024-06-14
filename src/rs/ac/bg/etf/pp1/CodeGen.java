@@ -1,23 +1,153 @@
 package rs.ac.bg.etf.pp1;
 
+import java.awt.Label;
+import java.security.KeyPair;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import java_cup.internal_error;
 import rs.ac.bg.etf.pp1.ast.*;
 import rs.etf.pp1.mj.runtime.Code;
 import rs.etf.pp1.symboltable.Tab;
+import rs.etf.pp1.symboltable.concepts.Obj;
+import rs.etf.pp1.symboltable.concepts.Struct;
 
 public class CodeGen extends VisitorAdaptor{
 	
-	private int mainPC = 0;
+	private int start_addr = 0;
 
-	public int mainPcVal() {
-		return mainPC;
+	public int getStartAddr() {
+		return start_addr;
 	}
 
+//****************************************************************************************************************
+// Statement
+//****************************************************************************************************************	
+	
+	@Override
+	public void visit(StmtRet stmtRet) {
+//		Should put data for B
+		Code.put(Code.exit);
+		Code.put(Code.return_);
+	}
+	
+	@Override
+	public void visit(StmtRead stmtRead) {
+		if(stmtRead.getDesignator().obj.getType().equals(Tab.intType))
+			Code.put(Code.read);
+		else 
+			Code.put(Code.bread);
+		Code.store(stmtRead.getDesignator().obj);
+	}
+	
+	@Override
+	public void visit(StmtPrintExpr stmtPrint) {
+//		What if array?
+		if(stmtPrint.getExpr().getTerm().getFactor().getFactorOp() instanceof FactorOpDesignator) {
+			FactorOpDesignator designator = (FactorOpDesignator) stmtPrint.getExpr().getTerm().getFactor().getFactorOp();
+			if(designator.struct.getKind() == Struct.Array) {
+				Code.put(Code.dup);
+				Code.put(Code.arraylength);
+//				Here i will have | arrAddr arrLength
+//				Process is good, i just need to flip reads
+//				Save pc for loop
+				int retpc = Code.pc;
+				Code.loadConst(1);
+				Code.put(Code.sub);
+				Code.put(Code.dup2);
+//				Here, stack is: | arrAddr arrIndex arrAddr arrIndex
+//				Load value from index
+				Code.put(Code.aload);
+//				Here, stack is: | arrAddr arrIndex arr[arrIndex]
+				Code.loadConst(0);
+				if(designator.struct.getElemType().equals(Tab.charType))
+					Code.put(Code.bprint);
+				else 
+					Code.put(Code.print);
+//				Here, stack is: | arrAddr arrIndex 
+				Code.put(Code.dup);
+				Code.loadConst(1);
+//				Compare with one and jump
+				Code.putFalseJump(Code.eq, retpc);
+//				Do final iteration
+				Code.loadConst(1);
+				Code.put(Code.sub);
+				Code.put(Code.aload);
+				Code.loadConst(0);
+				if(designator.struct.getElemType().equals(Tab.charType))
+					Code.put(Code.bprint);
+				else 
+					Code.put(Code.print);
+				return;
+			}
+		}
+//		Needs ..., val, width on exprStack
+		Code.loadConst(0);
+		if(stmtPrint.getExpr().struct.equals(Tab.charType))
+			Code.put(Code.bprint);
+		else 
+			Code.put(Code.print);
+	}
+	
+	@Override
+	public void visit(StmtPrintNum stmtPrint) {
+		Code.loadConst(stmtPrint.getNum());
+		if(stmtPrint.getExpr().struct.equals(Tab.charType))
+			Code.put(Code.bprint);
+		else 
+			Code.put(Code.print);
+	}
+	
+//****************************************************************************************************************
+//	Designator Statement
+//****************************************************************************************************************	
+
+	@Override
+	public void visit(DStmtDesAExpr desAExpr) {
+		Code.store(desAExpr.getDesignator().obj);
+	}
+	
+	@Override
+	public void visit(DStmtDesInc desInc) {
+//		if(desInc.getDesignator().obj.getKind() == Obj.Elem)
+		if(desInc.getDesignator() instanceof DesignatorArr) {
+			DesignatorArr designatorArr = (DesignatorArr) desInc.getDesignator();
+			Code.load(designatorArr.getDesignatorArrName().obj);
+			Code.put(Code.dup_x2);
+			Code.put(Code.pop);
+			Code.put(Code.dup_x1);
+		}
+		Code.load(desInc.getDesignator().obj);
+		Code.loadConst(1);
+		Code.put(Code.add);
+		Code.store(desInc.getDesignator().obj);
+	}
+	
+	@Override
+	public void visit(DStmtDesDec desDec) {
+		if(desDec.getDesignator() instanceof DesignatorArr) {
+			DesignatorArr designatorArr = (DesignatorArr) desDec.getDesignator();
+			Code.load(designatorArr.getDesignatorArrName().obj);
+			Code.put(Code.dup_x2);
+			Code.put(Code.pop);
+			Code.put(Code.dup_x1);
+		}
+		Code.load(desDec.getDesignator().obj);
+		Code.loadConst(-1);
+		Code.put(Code.add);
+		Code.store(desDec.getDesignator().obj);
+	}
 	
 //****************************************************************************************************************
 //	Designator
 //****************************************************************************************************************
 	
-	
+	@Override
+	public void visit(DesignatorArrName designatorArrName) {
+		Code.load(designatorArrName.obj);
+	}
 	
 //****************************************************************************************************************
 //	Expr
@@ -39,6 +169,16 @@ public class CodeGen extends VisitorAdaptor{
 //****************************************************************************************************************	
 	
 	@Override
+	public void visit(AddTermTerm addTerm) {
+		if(addTerm.getAddTerm() instanceof AddTermTerm) {
+			if(addTerm.getAddop() instanceof AddopPlus)
+				Code.put(Code.add);
+			else
+				Code.put(Code.sub);
+		}
+	}
+	
+	@Override
 	public void visit(Term term) {
 		if(term.getMulFactor() instanceof MulFactorFactor) {
 			MulFactorFactor mulFactorFactor = (MulFactorFactor) term.getMulFactor();
@@ -51,19 +191,16 @@ public class CodeGen extends VisitorAdaptor{
 		}
 	}
 	
-	@Override
-	public void visit(AddTermTerm addTerm) {
-		if(addTerm.getAddTerm() instanceof AddTermTerm) {
-			if(addTerm.getAddop() instanceof AddopPlus)
-				Code.put(Code.add);
-			else
-				Code.put(Code.sub);
-		}
-	}
+	
 	
 //****************************************************************************************************************
 //	Factor
 //****************************************************************************************************************
+	
+	@Override
+	public void visit(FactorOpDesignator factorOpDesignator) {
+		Code.load(factorOpDesignator.getDesignator().obj);
+	}
 	
 	@Override
 	public void visit(MulFactorFactor mulFactor) {
@@ -74,6 +211,15 @@ public class CodeGen extends VisitorAdaptor{
 				Code.put(Code.div);
 			else
 				Code.put(Code.rem);
+		}
+	}
+	
+	@Override
+	public void visit(Factor factor) {
+//		In factor, we must put minus if necessary
+		if(factor.getFactorSign() instanceof FactorSignMinus) {
+			Code.loadConst(-1);
+			Code.put(Code.mul);
 		}
 	}
 	
@@ -92,37 +238,60 @@ public class CodeGen extends VisitorAdaptor{
 		Code.loadConst(factorBool.getFactVal());
 	}
 	
-//****************************************************************************************************************
-//	Print
-//****************************************************************************************************************	
+	@Override
+	public void visit(FactorOpNew factorNew) {
+		Code.put(Code.newarray);
+		if(factorNew.getType().struct.equals(Tab.intType))
+			Code.put(1);
+		else
+			Code.put(0);
+	}
 	
 	@Override
-	public void visit(StmtPrintExpr stmtPrint) {
-		
-//		Needs ..., val, width on exprStack
+	public void visit(FactorOpRange factorRange) {
+		Code.put(Code.newarray);
+		Code.put(1);
+		Code.put(Code.dup);
+		Code.put(Code.dup);
+		Code.put(Code.arraylength);
+//		here, i will have | arrAddr arrAddr arrLen
+//		Save the pc for the loop
+		int curr_pc = Code.pc;
+		Code.loadConst(1);
+		Code.put(Code.sub);
+//		Decrement index, so we wont go out of bounds
+		Code.put(Code.dup2);
+		Code.put(Code.dup);
+//		here i will have | arrAddr arrAddr arrIndex arrIndex
+//		Do store 
+		Code.put(Code.astore);
+//		Duplicate value
+		Code.put(Code.dup);
 		Code.loadConst(0);
-		if(stmtPrint.getExpr().struct.equals(Tab.charType))
-			Code.put(Code.bprint);
-		else 
-			Code.put(Code.print);
+//		If not zero, repeat loop
+		Code.putFalseJump(Code.eq, curr_pc);
+//		If zero duplicate last index and do store arr[0] = [0]
+		Code.put(Code.dup);
+		Code.put(Code.astore);
 	}
 	
-	@Override
-	public void visit(StmtPrintNum stmtPrint) {
-		
-	}
 	
 //****************************************************************************************************************
 //	Methods
 //****************************************************************************************************************
 	@Override
 	public void visit(MethodName methodName) {
+//		Remember the address for B
+		methodName.obj.setAdr(Code.pc);
 //		Must have 3 bytes: enter b1 b2[formal, formal + local]
 		Code.put(Code.enter);
 //		level field -> number of formal parameters
 		Code.put(methodName.obj.getLevel());
 //		Whole locals
 		Code.put(methodName.obj.getLocalSymbols().size());
+		
+		if(methodName.getMName().equals("main"))
+			start_addr = methodName.obj.getAdr();
 	}
 	
 	@Override
@@ -130,5 +299,46 @@ public class CodeGen extends VisitorAdaptor{
 		Code.put(Code.exit);
 		Code.put(Code.return_);
 	}
+	
+	
+
+	
+//****************************************************************************************************************
+//	Jumps
+//****************************************************************************************************************
+	
+//	List<Map.Entry<String, Integer>> labList = new ArrayList<>();
+//	List<Map.Entry<String, List<Integer>>> patchList = new ArrayList<>();
+//	
+//	@Override
+//	public void visit(Label label) {
+//		labList.add(new AbstractMap.SimpleEntry<>(label.getLName(), Code.pc));
+//		if(patchList.contains(label.getLName())) {
+//			List<Integer> patchFixIntegers = patchList.get(patchList.indexOf(label.getLName())).getValue();
+//			for (Integer patchaAddr : patchFixIntegers) {
+//				Code.fixup(patchaAddr);
+//			}
+//			patchList.remove(patchList.indexOf(label.getLName()));
+//		}
+//	}
+//	
+//	@Override
+//	public void visit(StmtGoto stmtGoto) {
+////		Will not-label terminal so there would be no insertion in labels map
+//		if(labList.contains(stmtGoto.getLName())) {
+//			Code.putJump(labList.get(labList.indexOf(stmtGoto.getLName())));
+//		} else {
+////			jmp 0 0
+//			Code.putJump(0);
+////			pc is after last zero
+//			int patchAddr = Code.pc - 2;
+//			if(patchList.contains(stmtGoto.getLName())) {
+//				patchList.get(patchList.indexOf(stmtGoto.getLName())).getValue().add(patchAddr);
+//			} else {
+//				patchList.add(new AbstractMap.SimpleEntry<>(stmtGoto.getLName(), new ArrayList<Integer>()));
+//				patchList.get(patchList.indexOf(stmtGoto.getLName())).getValue().add(patchAddr);
+//			}
+//		}
+//	}
 	
 }
