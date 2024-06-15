@@ -163,6 +163,9 @@ public class CodeGen extends VisitorAdaptor{
 	public void visit(Expr expr) {
 		if(expr.getAddTerm() instanceof AddTermTerm) {
 			AddTermTerm addTermTerm = (AddTermTerm) expr.getAddTerm();
+			while(addTermTerm.getAddTerm() instanceof AddTermTerm) {
+				addTermTerm = (AddTermTerm) addTermTerm.getAddTerm();
+			}
 			if(addTermTerm.getAddop() instanceof AddopPlus)
 				Code.put(Code.add);
 			else
@@ -181,7 +184,7 @@ public class CodeGen extends VisitorAdaptor{
 				Code.put(Code.add);
 			else
 				Code.put(Code.sub);
-		}
+		} 
 	}
 	
 	@Override

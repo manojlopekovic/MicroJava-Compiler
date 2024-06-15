@@ -254,21 +254,35 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	@Override
 	public void visit(FactorOpBool factorBool) {
 		factorBool.struct = boolType;
+		info_report("Bool value: " + factorBool.getFactVal() + " used", factorBool);
 	}
 
 	@Override
 	public void visit(FactorOpNumber factorNumber) {
 		factorNumber.struct = intType;
+		info_report("Constant value: " + factorNumber.getFactVal() + " used", factorNumber);
 	}
 	
 	@Override
 	public void visit(FactorOpDesignator factorOpDesignator) {
-		factorOpDesignator.struct = factorOpDesignator.getDesignator().obj.getType();
+		Obj obj = factorOpDesignator.getDesignator().obj;
+		factorOpDesignator.struct = obj.getType();
+		if(obj.getKind() == Obj.Con) {
+			info_report("Constant: " + obj.getName() + " used from symbol table: " + obj.toString(), factorOpDesignator);
+		} else if(obj.getKind() == Obj.Var) {
+			if(obj.getLevel() == 0) 
+				info_report("Global variable: " + obj.getName() + " used from symbol table: " + obj.toString(), factorOpDesignator);
+			else 
+				info_report("Local variable: " + obj.getName() + " used from symbol table: " + obj.toString(), factorOpDesignator);
+		} else if(obj.getKind() == Obj.Elem) {
+			info_report("Array element: " + obj.getName() + " used from symbol table: " + obj.toString(), factorOpDesignator);
+		}
 	}
 	
 	@Override
 	public void visit(FactorOpChar factorChar) {
 		factorChar.struct = charType;
+		info_report("Char value: " + factorChar.getFactVal() + " used", factorChar);
 	}
 	
 	@Override
