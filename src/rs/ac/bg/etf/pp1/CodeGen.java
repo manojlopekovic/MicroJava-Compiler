@@ -48,38 +48,44 @@ public class CodeGen extends VisitorAdaptor{
 		if(stmtPrint.getExpr().getTerm().getFactor().getFactorOp() instanceof FactorOpDesignator) {
 			FactorOpDesignator designator = (FactorOpDesignator) stmtPrint.getExpr().getTerm().getFactor().getFactorOp();
 			if(designator.struct.getKind() == Struct.Array) {
+				Obj obj = new Obj(Obj.Var, "temp", designator.getDesignator().obj.getType());
 				Code.put(Code.dup);
-				Code.put(Code.arraylength);
-//				Here i will have | arrAddr arrLength
-//				Process is good, i just need to flip reads
-//				Save pc for loop
+//				Store adr in obj
+				Code.store(obj);
+				
+//				At this point, i have address stored/loadable from obj and on stack: |adr
+				
+				Code.loadConst(0);
 				int retpc = Code.pc;
-				Code.loadConst(1);
-				Code.put(Code.sub);
 				Code.put(Code.dup2);
-//				Here, stack is: | arrAddr arrIndex arrAddr arrIndex
-//				Load value from index
+//				At this point stack is: |adr ind adr ind
+				
 				Code.put(Code.aload);
-//				Here, stack is: | arrAddr arrIndex arr[arrIndex]
 				Code.loadConst(0);
-				if(designator.struct.getElemType().equals(Tab.charType))
+				if(stmtPrint.getExpr().struct.equals(Tab.charType))
 					Code.put(Code.bprint);
 				else 
 					Code.put(Code.print);
-//				Here, stack is: | arrAddr arrIndex 
+				
+//				|adr ind
+				Code.loadConst(1);
+				Code.put(Code.add);
 				Code.put(Code.dup);
-				Code.loadConst(1);
-//				Compare with one and jump
-				Code.putFalseJump(Code.eq, retpc);
-//				Do final iteration
-				Code.loadConst(1);
-				Code.put(Code.sub);
-				Code.put(Code.aload);
-				Code.loadConst(0);
-				if(designator.struct.getElemType().equals(Tab.charType))
-					Code.put(Code.bprint);
-				else 
-					Code.put(Code.print);
+				
+//				|adr ind+1 ind+1
+				Code.load(obj);
+				Code.put(Code.arraylength);
+				
+//				Compare with addrlen
+				Code.putFalseJump(Code.ge, retpc);
+				
+				Code.put(Code.pop);
+				Code.put(Code.pop);
+				
+				
+//				Use this to put adr on stack
+//				Code.load(obj);
+				
 				return;
 			}
 		}
