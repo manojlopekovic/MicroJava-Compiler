@@ -65,7 +65,7 @@ terminal EQUALS, NOTEQUALS, GREATEREQ, GREATER, LESSEQ, LESS, LOGOR, LOGAND;
 /* Control operators */
 terminal LBRACE, RBRACE, LBRACKET, RBRACKET, LPAREN, RPAREN;
 terminal SEMI, COMMA;
-terminal COLON;
+/* terminal COLON; */
 
 /* Values*/
 terminal Integer NUMBER;
@@ -78,12 +78,14 @@ terminal String IDENT;
 nonterminal Program; 
 /* nonterminal Namespace; */
 nonterminal ConstDecl, VarDecl, MethodDecl;
-nonterminal Type;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct Type;
 /* nonterminal StaticInitializer */
 nonterminal Statement;
 nonterminal FormPars;
-nonterminal DesignatorStatement, Designator, Expr;
-nonterminal Term, Addop, Mulop, Factor;
+nonterminal DesignatorStatement;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj Designator;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct Term, Factor, Expr;
+nonterminal Addop, Mulop;
 nonterminal Condition, CondFact, Relop, CondTerm;
 nonterminal ActPars;
 
@@ -92,18 +94,19 @@ nonterminal ActPars;
 nonterminal Decl;
 /* nonterminal DeclMul; */
 nonterminal ProgramName;
-nonterminal MethodName;
-nonterminal DesignatorArrName;
-nonterminal ConstDeclList, ConstDeclAssign, TypeConst;
-nonterminal VarDeclList, VarDeclaration, VarBracketsDecl, VarDeclMul;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj  MethodName;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj DesignatorArrName;
+nonterminal ConstDeclList, ConstDeclAssign;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct TypeConst;
+nonterminal VarDeclList, VarDeclaration, VarDeclMul;
 nonterminal MethodDeclMul;
 nonterminal StatementList;
 nonterminal TypeVoid;
 nonterminal FormParsMul, FormParsDecl;
-nonterminal PrintParam;
-nonterminal AddTerm, MulFactor;
-nonterminal ExprEpsilon;
-nonterminal UnFactor;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct AddTerm, MulFactor;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct ExprEpsilon;
+nonterminal FactorSign;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct FactorOp;
 nonterminal Matched, Unmatched;
 nonterminal ForDecl, DesStmtList, CondFactMay, DesStmtMul;
 nonterminal RelopExpr, OrCondTerm, AndCondFact;
@@ -185,12 +188,9 @@ VarDeclList				::= (VarDeclListRep)				COMMA VarDeclaration VarDeclList
 							(VarDeclListEpsilon)			/* epsilon */
 							;
 										
-VarDeclaration			::= (VarDeclaration)				IDENT:vName VarBracketsDecl
-							;
-							
-VarBracketsDecl			::=	(VarBracketsDeclBrackets)		LBRACKET RBRACKET
+VarDeclaration			::= (VarDeclarationVar)				IDENT:varName
 							|
-							(VarBracketsDeclNoBrackets)		/* epsilon */
+							(VarDeclarationArr)				IDENT:arrName LBRACKET RBRACKET
 							;
 							
 /*
@@ -211,7 +211,7 @@ MethodDeclMul			::= (MethodDeclMulRep)				MethodDeclMul MethodDecl
 							(MethodDeclMulEpsilon)			/* epsilon */
 							;
 							
-MethodDecl				::= (Method)						TypeVoid MethodName LPAREN FormPars RPAREN VarDeclMul LBRACE StatementList RBRACE
+MethodDecl				::= (MethodDecl)					TypeVoid MethodName LPAREN FormPars RPAREN VarDeclMul LBRACE StatementList RBRACE
 							;
 							
 MethodName				::= (MethodName)					IDENT:mName
@@ -232,7 +232,9 @@ FormParsMul				::= (FormParsMulRep)				COMMA FormParsDecl FormParsMul
 							(FormParsMulEpsilon)			/* epsilon */	
 							;
 
-FormParsDecl			::= (FormsParsDecl)					Type:vType IDENT:vName VarBracketsDecl
+FormParsDecl			::= (FormsParsDeclVar)				Type:vType IDENT:vName
+							|
+							(FormsParsDeclArr)				Type:vType IDENT:vName LBRACKET RBRACKET
 							;
 							
 Type					::= (Type)							IDENT:tName
@@ -251,9 +253,11 @@ Matched					::= (StmtDesignatorStmt)			DesignatorStatement:des SEMI
 							|
 							(StmtRead)						READ LPAREN Designator:des RPAREN SEMI
 							|
-							(StmtPrint)						PRINT LPAREN Expr:e PrintParam RPAREN SEMI
+							(StmtPrintExpr)					PRINT LPAREN Expr:expr RPAREN SEMI
 							|
-							(StmtRet)						RETURN ExprEpsilon:e SEMI
+							(StmtPrintNum)					PRINT LPAREN Expr:expr COMMA NUMBER:num RPAREN SEMI
+							|
+							(StmtRet)						RETURN ExprEpsilon:expr SEMI
 							|
 							(StmtMatched)					IF LPAREN Condition:cond RPAREN Matched:match ELSE Matched:unmatch
 							|
@@ -313,42 +317,38 @@ DesStmtMul				::= (DesStmtMulRep)					COMMA DesignatorStatement DesStmtMul
 							(DesStmtMulEpsilon)				/* epsilon */
 							;
 							
-ExprEpsilon				::= (ExprEpsilonExpr)				Expr:e
+ExprEpsilon				::= (ExprEpsilonExpr)				Expr:expr
 							|
 							(ExprEpsilonEpsilon)			/* epsilon */
 							;
 							
-PrintParam				::= (PrintParamNumConst)			COMMA NUMBER:num
-							|
-							(PrintParamEpsilon)				/* epsilon */
-							;
 							
-DesignatorStatement		::= (DStmtDesAExpr)					Designator:des ASSIGN Expr:e
+DesignatorStatement		::= (DStmtDesAExpr)					Designator:des ASSIGN Expr:expr
 							|
 							(DStmtDesInc)					Designator:des INC
 							|
 							(DStmtDesDec)					Designator:des DEC
 							|
-							(DStmtDesActPars)				Designator LPAREN ActPars:ap RPAREN
+							(DStmtDesActPars)				Designator:des LPAREN ActPars:actPars RPAREN
 							|
-							(DStmtListComp)					Designator ASSIGN LBRACKET FOR Expr:e IN Designator IfCond RBRACKET
+							(DStmtListComp)					Designator:des ASSIGN LBRACKET FOR Expr:expr IN Designator:desIn IfCond RBRACKET
 							/*
 							|
 							(DStmtArrayUnpack)				LBRACKET DesignatorComma MUL Designator RBRACKET ASSIGN Designator
 							*/
 							;
 
-IfCond					::= (IfCondIf)						IF Condition
+IfCond					::= (IfCondIf)						IF Condition:cond
 							|
 							(IfCondEpsilon)					/* epsilon */
 							;
 
-ActPars					::= (ActParsExpr)					Expr:e ExprList:el
+ActPars					::= (ActParsExpr)					Expr:expr ExprList:exprList
 							|
 							(ActParsEpsilon)				/* epsilon */
 							;
 
-ExprList				::= (ExprListExpr)					ExprList COMMA Expr:e
+ExprList				::= (ExprListExpr)					ExprList:exprList COMMA Expr:expr
 							|
 							(ExprListEpsilon)				/* epsilon */
 							;
@@ -362,9 +362,9 @@ DesignatorComma			::= (DesignatorCommaDes)			DesignatorComma Designator COMMA
 							;
 */						
 					
-Designator 				::= (DesignatorVar)					IDENT:dName 
+Designator 				::= (DesignatorVar)					IDENT:desName 
 							|
-							(DesignatorArr)					DesignatorArrName:dArrName LBRACKET Expr:e RBRACKET
+							(DesignatorArr)					DesignatorArrName:desArrName LBRACKET Expr:expr RBRACKET
 							/* 
 							|
 							(DesignatorNamespaceVar)		IDENT:nName COLON COLON IDENT:dName 
@@ -373,42 +373,49 @@ Designator 				::= (DesignatorVar)					IDENT:dName
 							*/
 							;
 							
-DesignatorArrName		::= (DesignatorArrName)				IDENT:dName
+DesignatorArrName		::= (DesignatorArrName)				IDENT:desArrName
 							;							
 							
-Expr					::= (Expr)							Term:t AddTerm:at
+Expr					::= (Expr)							Term:term AddTerm:addTerm
 							;
 					
-AddTerm					::= (AddTermTerm)					AddTerm Addop Term:t
+AddTerm					::= (AddTermTerm)					AddTerm:addTerm Addop Term:term
 							|
 							(AddTermEpsilon)				/* epsilon */
 							;
 							
-Term					::= (Term)							UnFactor:f MulFactor:mf
+Term					::= (Term)							Factor:factor MulFactor:mulFactor
 							;
 							
 							
-MulFactor				::= (MulFactorFactor)				MulFactor Mulop UnFactor:f
+MulFactor				::= (MulFactorFactor)				MulFactor:mulFactor Mulop Factor:factor
 							|
 							(MulFactorEpsilon)				/* epsilon */
 							;
 	
-UnFactor				::= (UnFactorMinus)					MINUS Factor:f
+Factor					::=	(Factor)						FactorSign:sign FactorOp:factor					
+							;
+							
+FactorSign				::=	(FactorSignMinus)				MINUS 
 							|
-							(UnFactorPlus)					Factor:f
+							(FactorSignPlus)				/* epsilon */
 							;
 						
-Factor					::= (FactorConst)					TypeConst:cT
+FactorOp				::= (FactorOpChar)					CHAR:factVal
 							|
-							(FactorExpr)					LPAREN Expr:e RPAREN
+							(FactorOpNumber)				NUMBER:factVal
 							|
-							(FactorDesignator)				Designator:des
+							(FactorOpBool)					BOOL:factVal
 							|
-							(FactorNew)						NEW Type:nType LBRACKET Expr:e RBRACKET
+							(FactorOpExpr)					LPAREN Expr:e RPAREN
 							|
-							(FactorRange)					RANGE LPAREN Expr:e RPAREN
+							(FactorOpDesignator)			Designator:des
 							|
-							(FactorDesignatorParen)			Designator:des LPAREN ActPars:ap RPAREN
+							(FactorOpNew)					NEW Type:nType LBRACKET Expr:expr RBRACKET
+							|
+							(FactorOpRange)					RANGE LPAREN Expr:expr RPAREN
+							|
+							(FactorOpDesignatorParen)		Designator:des LPAREN ActPars:actPars RPAREN
 							;
 							
 Addop					::= (AddopPlus)						PLUS
@@ -423,7 +430,7 @@ Mulop					::= (MulopMul)						MUL
 							(MulopMod)						MODULE
 							;
 							
-Relop					::= (RelopEqals)					EQUALS
+Relop					::= (RelopEquals)					EQUALS
 							|
 							(RelopNotEquals)				NOTEQUALS
 							|

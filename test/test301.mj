@@ -53,7 +53,6 @@ program test301
 
 		niz2 = range(bodovi + 1);
 		print(niz2);
-		print(' '); 
 	}
 }
 

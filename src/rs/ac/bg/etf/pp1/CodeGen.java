@@ -303,12 +303,12 @@ public class CodeGen extends VisitorAdaptor{
 			start_addr = methodName.obj.getAdr();
 	}
 	
+	
 	@Override
 	public void visit(MethodDecl methodDecl) {
 		Code.put(Code.exit);
 		Code.put(Code.return_);
 	}
-	
 	
 
 	

@@ -27,7 +27,7 @@
 		<java jar="lib/JFlex.jar" fork="true">
 	    	<arg value="-d"/>
 	    	<arg value="./src/rs/ac/bg/etf/pp1"/>
-	    	<arg value="spec/mjlexer.lex"/>
+	    	<arg value="spec/mjlexerB.lex"/>
 		</java>
 	</target>
 	
@@ -43,7 +43,7 @@
 			<arg value="-dump_states"/>
 			-->
 			<arg value="-buildtree"/>
-			<arg value="spec/mjparser.cup"/>
+			<arg value="spec/mjparserB.cup"/>
 		</java>
 	</target>
 	

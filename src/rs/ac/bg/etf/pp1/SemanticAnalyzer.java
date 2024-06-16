@@ -184,14 +184,14 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	
 	@Override
 	public void visit(DesignatorVar designatorVar) {
-		Obj desObj = Tab.find(designatorVar.getDName());
+		Obj desObj = Tab.find(designatorVar.getDesName());
 		if(desObj == Tab.noObj) {
-			error_report("Accessing undefined var: " + designatorVar.getDName(), designatorVar);
+			error_report("Accessing undefined var: " + designatorVar.getDesName(), designatorVar);
 			designatorVar.obj = Tab.noObj;
 			return;
 		} 
 		if(desObj.getKind() != Obj.Var && desObj.getKind() != Obj.Con) {
-			error_report("Unadequate variable: " + designatorVar.getDName(), designatorVar);
+			error_report("Unadequate variable: " + designatorVar.getDesName(), designatorVar);
 			designatorVar.obj = Tab.noObj;
 			return;			
 		}
@@ -219,14 +219,14 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 //		visit(niz) -> obj(var[niz]) -> strukt arr -> strukt int
 //		niz[5];
 //		visit niz[] -> elem(strukt int)
-		Obj desObj = Tab.find(designatorArrName.getDName());
+		Obj desObj = Tab.find(designatorArrName.getDesArrName());
 		if(desObj == Tab.noObj) {
-			error_report("Accessing undefined array: " + designatorArrName.getDName(), designatorArrName);
+			error_report("Accessing undefined array: " + designatorArrName.getDesArrName(), designatorArrName);
 			designatorArrName.obj = Tab.noObj;
 			return;
 		} 
 		if(desObj.getKind() != Obj.Var || desObj.getType().getKind() != Struct.Array) {
-			error_report("Unadequate variable, not array: " + designatorArrName.getDName(), designatorArrName);
+			error_report("Unadequate variable, not array: " + designatorArrName.getDesArrName(), designatorArrName);
 			designatorArrName.obj = Tab.noObj;
 			return;			
 		}
@@ -323,25 +323,25 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 		if(currentMethod == null) {
 //			Finds in all scopes, not just open one
 //			Returns Tab.noObj;
-			varObj = Tab.find(varDeclarationVar.getVName());
+			varObj = Tab.find(varDeclarationVar.getVarName());
 		} else {
 //			returns null
-			varObj = Tab.currentScope().findSymbol(varDeclarationVar.getVName());
+			varObj = Tab.currentScope().findSymbol(varDeclarationVar.getVarName());
 		}
 		if(varObj != null)
 			if(varObj != Tab.noObj) {
-				error_report("Double declaration of variable: " + varDeclarationVar.getVName(), varDeclarationVar);
+				error_report("Double declaration of variable: " + varDeclarationVar.getVarName(), varDeclarationVar);
 				return;
 			} 
-		Tab.insert(Obj.Var, varDeclarationVar.getVName(), currentType);
+		Tab.insert(Obj.Var, varDeclarationVar.getVarName(), currentType);
 		if(currentMethod == null)
-			info_report("Global var declaration: " + varDeclarationVar.getVName(), varDeclarationVar);
+			info_report("Global var declaration: " + varDeclarationVar.getVarName(), varDeclarationVar);
 		else 
-			info_report("Local var declaration: " + varDeclarationVar.getVName() + " in method: " + currentMethod.getName(), varDeclarationVar);
+			info_report("Local var declaration: " + varDeclarationVar.getVarName() + " in method: " + currentMethod.getName(), varDeclarationVar);
 	}
 	
 	@Override
-	public void visit(VarDeclarationArray varDeclarationArray) {
+	public void visit(VarDeclarationArr varDeclarationArray) {
 		Obj varObj = null;
 		if(currentMethod == null) {
 //			Finds in all scopes, not just open one
