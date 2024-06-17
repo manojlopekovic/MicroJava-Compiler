@@ -1,12 +1,12 @@
 program Test
 {
 
-	int methInt(){
-	
-		return 1;
+	int methInt(int a, int b, int c, int d[])
+	{
+		return a;
 	}
 	
-	bool methBool(){
+	bool methBool(bool p1){
 		
 		return true;
 	}
@@ -20,8 +20,19 @@ program Test
 	
 		return;
 	}
+	
+	int methodCalc(int b, int c, bool add){
+		if(add == true){
+			return b + c;
+		} else {
+			return b - c;
+		}
+	}
 
 	void main()
+	int x, y, z, arr[];
+	bool ba, bb;
+	char ca, cb;
 	{
 		if(1 == 1){
 			
@@ -33,7 +44,12 @@ program Test
 		
 		}
 		
+		x = methInt(x, z, y, arr);
+		methBool(true);
+		
+		y = methodCalc(z, x, true);
 		
 	}
+	
 
 }

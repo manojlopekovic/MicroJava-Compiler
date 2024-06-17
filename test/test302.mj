@@ -98,7 +98,7 @@ int a;
 		print(eol);
 
 		niz_2 = new int[a];
-		niz_3 = range(a);
+		// niz_3 = range(a);
 		niz_2 = [for a + 1 in niz_3];
 		print(niz_2);
 		print(niz_3);

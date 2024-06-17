@@ -1,5 +1,13 @@
 package rs.ac.bg.etf.pp1;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Stack;
+import java.util.Vector;
+
 import org.apache.log4j.Logger;
 
 import rs.ac.bg.etf.pp1.ast.*;
@@ -25,6 +33,8 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	private Obj currentMethod;
 	private boolean returnedFromCurrentMethod = false;
 	private int nVars;
+	private Obj calledMethod;
+	private Stack<Obj> methodStack = new Stack<>(); 
 
 
 //****************************************************************************************************************
@@ -45,7 +55,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 				return;
 			}
 		}
-		condition.struct = condition.getCondTerm().struct;
+		condition.struct = boolType;
 		
 	}
 	
@@ -87,7 +97,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	}
 	
 	@Override
-	public void visit(CondFact condFact) {
+	public void visit(CondFactRelop condFact) {
 		if(!condFact.getExpr().struct.compatibleWith(condFact.getExpr1().struct)) {
 			error_report("Expressions not compatible in conditional fact[ " + condFact.getExpr().struct.getKind() + ", " + condFact.getExpr1().struct.getKind() + " ]" , condFact);
 			condFact.struct = noType;
@@ -100,7 +110,16 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 				return;
 			}
 		}
-		condFact.struct = condFact.getExpr().struct;
+		condFact.struct = boolType;
+	}
+	
+	@Override
+	public void visit(CondFactExpr condFact) {
+		if(condFact.getExpr().struct == boolType) {
+			condFact.struct = condFact.getExpr().struct;
+			return;
+		}
+		error_report("Expression in condition is not boolean", condFact);
 	}
 	
 //****************************************************************************************************************
@@ -171,6 +190,14 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 //****************************************************************************************************************
 	
 	@Override
+	public void visit(DStmtDesMeth methodCall) {
+		if(methodStack.empty())
+			calledMethod = Tab.noObj;
+		else 
+			calledMethod = methodStack.pop();
+	}
+	
+	@Override
 	public void visit(DStmtDesAExpr dStmtDesAExpr) {
 //		Check if variable, element of an array [Field inside class for C]
 		if(dStmtDesAExpr.getDesignator().obj.getKind() != Obj.Var && dStmtDesAExpr.getDesignator().obj.getKind() != Obj.Elem) {
@@ -178,7 +205,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 			return;
 		}
 		if(!dStmtDesAExpr.getExpr().struct.assignableTo(dStmtDesAExpr.getDesignator().obj.getType())) {
-			error_report("Trying to assign variable type: " + dStmtDesAExpr.getExpr().struct.getKind() + " to: " + dStmtDesAExpr.getDesignator().obj.getName(), dStmtDesAExpr);
+			error_report("Trying to assign variable type: " + dStmtDesAExpr.getExpr().struct.getKind() + " to: " + dStmtDesAExpr.getDesignator().obj.getName() + ", which is of type: " + dStmtDesAExpr.getDesignator().obj.getType().getKind(), dStmtDesAExpr);
 			return;
 		}
 	}
@@ -219,13 +246,13 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	public void visit(MulFactorFactor mulFactorFactor) {
 		if(mulFactorFactor.getMulFactor() instanceof MulFactorFactor) {
 			if(!mulFactorFactor.getMulFactor().struct.equals(intType)) {
-				error_report("Trying to assign non-int value: " + mulFactorFactor.getMulFactor().struct + " in multiplication operation", mulFactorFactor);
+				error_report("Trying to assign non-int value: " + mulFactorFactor.getMulFactor().struct.getKind() + " in multiplication operation", mulFactorFactor);
 				mulFactorFactor.struct = noType;
 				return;
 			}
 		}
 		if(!mulFactorFactor.getFactor().struct.equals(intType)) {
-			error_report("Trying to assign non-int value: " + mulFactorFactor.getFactor().struct + " in multiplication operation", mulFactorFactor);
+			error_report("Trying to assign non-int value: " + mulFactorFactor.getFactor().struct.getKind() + " in multiplication operation", mulFactorFactor);
 			mulFactorFactor.struct = noType;
 			return;
 		}
@@ -236,12 +263,12 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	public void visit(Term term) {
 		if(term.getMulFactor() instanceof MulFactorFactor) {
 			if(!term.getMulFactor().struct.equals(intType)) {
-				error_report("Trying to assign non-int value: " + term.getMulFactor().struct + "  in term", term);
+				error_report("Trying to assign non-int value: " + term.getMulFactor().struct.getKind() + "  in term", term);
 				term.struct = noType;
 				return;
 			} 
 			if(!term.getFactor().struct.equals(intType)) {
-				error_report("Trying to assign non-int value: " + term.getFactor().struct + "  in term", term);
+				error_report("Trying to assign non-int value: " + term.getFactor().struct.getKind() + "  in term", term);
 				term.struct = noType;
 				return;
 			}
@@ -253,13 +280,13 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	public void visit(AddTermTerm addTermTerm) {
 		if(addTermTerm.getAddTerm() instanceof AddTermTerm) {
 			if(!addTermTerm.getAddTerm().struct.equals(intType)) {
-				error_report("Trying to assign non-int value: " + addTermTerm.getAddTerm().struct + " in addition operation", addTermTerm);
+				error_report("Trying to assign non-int value: " + addTermTerm.getAddTerm().struct.getKind() + " in addition operation", addTermTerm);
 				addTermTerm.struct = noType;
 				return;
 			}
 		}
 		if(!addTermTerm.getTerm().struct.equals(intType)) {
-			error_report("Trying to assign non-int value: " + addTermTerm.getTerm().struct + " in addition operation", addTermTerm);
+			error_report("Trying to assign non-int value: " + addTermTerm.getTerm().struct.getKind() + " in addition operation", addTermTerm);
 			addTermTerm.struct = noType;
 			return;
 		}
@@ -271,12 +298,12 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	public void visit(Expr expr) {
 		if(expr.getAddTerm() instanceof AddTermTerm) {
 			if(!expr.getAddTerm().struct.equals(intType)) {
-				error_report("Trying to assign non-int value: " + expr.getAddTerm().struct + "  in expr", expr);
+				error_report("Trying to assign non-int value: " + expr.getAddTerm().struct.getKind() + "  in expr", expr);
 				expr.struct = noType;
 				return;
 			} 
 			if(!expr.getTerm().struct.equals(intType)) {
-				error_report("Trying to assign non-int value: " + expr.getTerm().struct + "  in expr", expr);
+				error_report("Trying to assign non-int value: " + expr.getTerm().struct.getKind() + "  in expr", expr);
 				expr.struct = noType;
 				return;
 			}
@@ -304,7 +331,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 			designatorVar.obj = Tab.noObj;
 			return;
 		} 
-		if(desObj.getKind() != Obj.Var && desObj.getKind() != Obj.Con) {
+		if(desObj.getKind() != Obj.Var && desObj.getKind() != Obj.Con && desObj.getKind() != Obj.Meth) {
 			error_report("Unadequate variable: " + designatorVar.getDesName(), designatorVar);
 			designatorVar.obj = Tab.noObj;
 			return;			
@@ -352,6 +379,20 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 //****************************************************************************************************************
 	
 	@Override
+	public void visit(FactorOpMethCall factorMethCall) {
+		if(factorMethCall.getMethodCallName().getDesignator() instanceof DesignatorVar) {
+			DesignatorVar designatorVar = (DesignatorVar) factorMethCall.getMethodCallName().getDesignator();
+			factorMethCall.struct = designatorVar.obj.getType();
+		} else {
+			factorMethCall.struct = noType;
+		}
+		if(methodStack.empty())
+			calledMethod = Tab.noObj;
+		else
+			calledMethod = methodStack.pop();
+	}
+	
+	@Override
 	public void visit(FactorOpNew factorOpNew) {
 		if(!factorOpNew.getExpr().struct.equals(intType)) {
 			error_report("Size of array is not of integer type", factorOpNew);
@@ -383,15 +424,17 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	public void visit(FactorOpDesignator factorOpDesignator) {
 		Obj obj = factorOpDesignator.getDesignator().obj;
 		factorOpDesignator.struct = obj.getType();
-		if(obj.getKind() == Obj.Con) {
-			info_report("Constant: " + obj.getName() + " used from symbol table: " + obj.toString(), factorOpDesignator);
-		} else if(obj.getKind() == Obj.Var) {
-			if(obj.getLevel() == 0) 
-				info_report("Global variable: " + obj.getName() + " used from symbol table: " + obj.toString(), factorOpDesignator);
-			else 
-				info_report("Local variable: " + obj.getName() + " used from symbol table: " + obj.toString(), factorOpDesignator);
-		} else if(obj.getKind() == Obj.Elem) {
-			info_report("Array element: " + obj.getName() + " used from symbol table: " + obj.toString(), factorOpDesignator);
+		if(obj != Tab.noObj) {
+			if(obj.getKind() == Obj.Con) {
+				info_report("Constant: " + obj.getName() + " used from symbol table", factorOpDesignator);
+			} else if(obj.getKind() == Obj.Var) {
+				if(obj.getLevel() == 0) 
+					info_report("Global variable: " + obj.getName() + " used from symbol table", factorOpDesignator);
+				else 
+					info_report("Local variable: " + obj.getName() + " used from symbol table", factorOpDesignator);
+			} else if(obj.getKind() == Obj.Elem) {
+				info_report("Array element: " + obj.getName() + " used from symbol table", factorOpDesignator);
+			}
 		}
 	}
 	
@@ -485,6 +528,84 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 //****************************************************************************************************************
 //	Methods
 //****************************************************************************************************************
+	
+	@Override
+	public void visit(FormParsPars formPars) {
+		int i = 1;
+		if(formPars.getFormParsMul() instanceof FormParsMulRep) {
+			FormParsMulRep countParsMulRep = (FormParsMulRep) formPars.getFormParsMul();
+			i++;
+			while(countParsMulRep.getFormParsMul() instanceof FormParsMulRep) {
+				i++;
+				countParsMulRep = (FormParsMulRep)countParsMulRep.getFormParsMul();
+			}
+		}
+		currentMethod.setLevel(i);
+	}
+	
+	@Override
+	public void visit(FormsParsDeclArr formsParsDeclArr) {
+		Obj arrFormObj = Tab.insert(Obj.Var, formsParsDeclArr.getVName(), new Struct(Struct.Array, currentType));
+		arrFormObj.setFpPos(1);
+	}
+	
+	@Override
+	public void visit(FormsParsDeclVar formsParsDeclVar) {
+		Obj varFormObj = Tab.insert(Obj.Var, formsParsDeclVar.getVName(), currentType);
+		varFormObj.setFpPos(1);
+	}
+	
+	@Override
+	public void visit(ActParsExpr actPars) {
+		Collection<Obj> formParsArrayList = calledMethod.getLocalSymbols();
+		List<Struct> actParsCollection = new ArrayList<>();
+		List<Obj> formParsCollection = new ArrayList<>();
+		if(actPars.getExprList() instanceof ExprListExpr) {
+			ExprListExpr expr = (ExprListExpr) actPars.getExprList();
+			actParsCollection.add(0, expr.getExpr().struct);
+			while(expr.getExprList() instanceof ExprListExpr) {
+				 expr = (ExprListExpr) expr.getExprList(); 
+				 actParsCollection.add(0, expr.getExpr().struct);
+			}
+		}
+		actParsCollection.add(0, actPars.getExpr().struct);
+		if(actParsCollection.size() != calledMethod.getLevel()) {
+			error_report("Difference in numbers of formal parameters to actual parameters. Expected: " + calledMethod.getLevel() + " got: " + actParsCollection.size(), actPars);
+			return;
+		}
+		int i = 0;
+		for (Obj obj : formParsArrayList) {
+			if(obj.getFpPos() == 1)
+				formParsCollection.add(obj);
+		}
+		for (Obj obj : formParsCollection) {
+			Struct struct = actParsCollection.get(i);
+			if(obj.getType().getKind() != struct.getKind()) {
+				error_report("Wrong parameter type for method: " + calledMethod.getName() + ", at position: " + (i + 1) + ", expected: " 
+					+ obj.getType().getKind() + ", got: " + struct.getKind(), actPars);
+			}
+			i++;
+		}
+	}
+	
+	@Override
+	public void visit(ActParsEpsilon actPars) {
+		if(calledMethod.getLevel() != 0) {
+			error_report("Difference in numbers of formal parameters to actual parameters. Expected: " + calledMethod.getLevel() + " got: " + 0, actPars);
+			return;
+		}
+	}
+	
+	@Override
+	public void visit(MethodCallName methodCallName) {
+		if(methodCallName.getDesignator().obj.getKind() != Obj.Meth) {
+			error_report("Tried to call identificator: " + methodCallName.getDesignator().obj.getName() + " that does not represent method call", methodCallName);
+			return;
+		}
+		if(calledMethod != Tab.noObj)
+			methodStack.push(calledMethod);
+		calledMethod = methodCallName.getDesignator().obj;
+	}
 	
 	public void visit(MethodName methodName) {
 //		For A

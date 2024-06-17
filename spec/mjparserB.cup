@@ -51,10 +51,12 @@ scan with {:
 	return s;
 :}
 
+
+
 /* TERMINALS */
 
 /* Key words */
-terminal PROG, CONST, VOID, READ, PRINT, NEW, RETURN, RANGE, IF, ELSE, BREAK, CONTINUE, FOR, IN;
+terminal PROG, CONST, VOID, READ, PRINT, NEW, RETURN, RANGE, IF, ELSE, BREAK, CONTINUE, FOR, IN, EOL;
 /* terminal NAMESPACE; */
 /* terminal STATIC; */
 
@@ -113,8 +115,11 @@ nonterminal ForDecl, DesStmtList, DesStmtMul;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct OrCondTerm, AndCondFact, CondFactMay;
 nonterminal ExprList;
 nonterminal IfCond;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj MethodCallName;
 /* nonterminal DesignatorComma; */
 
+
+precedence left ELSE;
 
 /* Program 				::= (Program)						PROG ProgramName NamespaceMul Decl LBRACE MethodDeclMul RBRACE */
 Program 				::= (Program)						PROG ProgramName Decl LBRACE MethodDeclMul RBRACE	
@@ -292,7 +297,9 @@ AndCondFact				::= (AndCondFactAnd)				AndCondFact	LOGAND CondFact:cf
 							(AndCondFactEpsilon)			/* epsilon */
 							;
 
-CondFact				::= (CondFact)						Expr:e Relop Expr:re
+CondFact				::= (CondFactExpr)					Expr:e
+							|
+							(CondFactRelop)					Expr:e Relop Expr:re
 							;
 
 CondFactMay				::= (CondFactMayCond)				CondFact
@@ -325,13 +332,16 @@ DesignatorStatement		::= (DStmtDesAExpr)					Designator:des ASSIGN Expr:expr
 							|
 							(DStmtDesDec)					Designator:des DEC
 							|
-							(DStmtDesActPars)				Designator:des LPAREN ActPars:actPars RPAREN
+							(DStmtDesMeth)					MethodCallName LPAREN ActPars:actPars RPAREN
 							|
 							(DStmtListComp)					Designator:des ASSIGN LBRACKET FOR Expr:expr IN Designator:desIn IfCond RBRACKET
 							/*
 							|
 							(DStmtArrayUnpack)				LBRACKET DesignatorComma MUL Designator RBRACKET ASSIGN Designator
 							*/
+							;
+							
+MethodCallName			::= (MethodCallName)				Designator:des
 							;
 
 IfCond					::= (IfCondIf)						IF Condition:cond
@@ -411,7 +421,7 @@ FactorOp				::= (FactorOpChar)					CHAR:factVal
 							|
 							(FactorOpRange)					RANGE LPAREN Expr:expr RPAREN
 							|
-							(FactorOpDesignatorParen)		Designator:des LPAREN ActPars:actPars RPAREN
+							(FactorOpMethCall)				MethodCallName LPAREN ActPars:actPars RPAREN
 							;
 							
 Addop					::= (AddopPlus)						PLUS

@@ -51,10 +51,12 @@ scan with {:
 	return s;
 :}
 
+
+
 /* TERMINALS */
 
 /* Key words */
-terminal PROG, CONST, VOID, READ, PRINT, NEW, RETURN, RANGE, IF, ELSE, BREAK, CONTINUE, FOR, IN;
+terminal PROG, CONST, VOID, READ, PRINT, NEW, RETURN, RANGE, IF, ELSE, BREAK, CONTINUE, FOR, IN, EOL;
 /* terminal NAMESPACE; */
 /* terminal STATIC; */
 
@@ -123,8 +125,11 @@ nonterminal DesStmtMul DesStmtMul;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct OrCondTerm, AndCondFact, CondFactMay;
 nonterminal ExprList ExprList;
 nonterminal IfCond IfCond;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj MethodCallName;
 /* nonterminal DesignatorComma; */
 
+
+precedence left ELSE;
 
 /* Program 				::= (Program)						PROG ProgramName NamespaceMul Decl LBRACE MethodDeclMul RBRACE */
 Program 				::= (Program)						PROG ProgramName:P1 Decl:D2 LBRACE MethodDeclMul:M3 RBRACE {: RESULT=new Program(P1, D2, M3); RESULT.setLine(P1left); :}	
@@ -302,7 +307,9 @@ AndCondFact				::= (AndCondFactAnd)				AndCondFact:A1	LOGAND CondFact:cf {: RESU
 							(AndCondFactEpsilon) {: RESULT=new AndCondFactEpsilon(); :}			/* epsilon */
 							;
 
-CondFact				::= (CondFact)						Expr:e Relop:R1 Expr:re {: RESULT=new CondFact(e, R1, re); RESULT.setLine(eleft); :}
+CondFact				::= (CondFactExpr)					Expr:e {: RESULT=new CondFactExpr(e); RESULT.setLine(eleft); :}
+							|
+							(CondFactRelop)					Expr:e Relop:R1 Expr:re {: RESULT=new CondFactRelop(e, R1, re); RESULT.setLine(eleft); :}
 							;
 
 CondFactMay				::= (CondFactMayCond)				CondFact:C1 {: RESULT=new CondFactMayCond(C1); RESULT.setLine(C1left); :}
@@ -335,13 +342,16 @@ DesignatorStatement		::= (DStmtDesAExpr)					Designator:des ASSIGN Expr:expr {: 
 							|
 							(DStmtDesDec)					Designator:des DEC {: RESULT=new DStmtDesDec(des); RESULT.setLine(desleft); :}
 							|
-							(DStmtDesActPars)				Designator:des LPAREN ActPars:actPars RPAREN {: RESULT=new DStmtDesActPars(des, actPars); RESULT.setLine(desleft); :}
+							(DStmtDesMeth)					MethodCallName:M1 LPAREN ActPars:actPars RPAREN {: RESULT=new DStmtDesMeth(M1, actPars); RESULT.setLine(M1left); :}
 							|
 							(DStmtListComp)					Designator:des ASSIGN LBRACKET FOR Expr:expr IN Designator:desIn IfCond:I1 RBRACKET {: RESULT=new DStmtListComp(des, expr, desIn, I1); RESULT.setLine(desleft); :}
 							/*
 							|
 							(DStmtArrayUnpack)				LBRACKET DesignatorComma MUL Designator RBRACKET ASSIGN Designator
 							*/
+							;
+							
+MethodCallName			::= (MethodCallName)				Designator:des {: RESULT=new MethodCallName(des); RESULT.setLine(desleft); :}
 							;
 
 IfCond					::= (IfCondIf)						IF Condition:cond {: RESULT=new IfCondIf(cond); RESULT.setLine(condleft); :}
@@ -421,7 +431,7 @@ FactorOp				::= (FactorOpChar)					CHAR:factVal {: RESULT=new FactorOpChar(factV
 							|
 							(FactorOpRange)					RANGE LPAREN Expr:expr RPAREN {: RESULT=new FactorOpRange(expr); RESULT.setLine(exprleft); :}
 							|
-							(FactorOpDesignatorParen)		Designator:des LPAREN ActPars:actPars RPAREN {: RESULT=new FactorOpDesignatorParen(des, actPars); RESULT.setLine(desleft); :}
+							(FactorOpMethCall)				MethodCallName:M1 LPAREN ActPars:actPars RPAREN {: RESULT=new FactorOpMethCall(M1, actPars); RESULT.setLine(M1left); :}
 							;
 							
 Addop					::= (AddopPlus)						PLUS {: RESULT=new AddopPlus(); :}
