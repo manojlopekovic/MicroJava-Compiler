@@ -291,7 +291,7 @@ AndCondFact				::= (AndCondFactAnd)				AndCondFact	LOGAND CondFact:cf
 							(AndCondFactEpsilon)			/* epsilon */
 							;
 
-CondFact				::= (CondFact)						Expr:e RelopExpr:re
+CondFact				::= (CondFact)						Expr:e Relop Expr:re
 							;
 
 RelopExpr				::= (RelopExprExpr)					Relop:r Expr:e

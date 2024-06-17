@@ -307,7 +307,7 @@ AndCondFact				::= (AndCondFactAnd)				AndCondFact:A1	LOGAND CondFact:cf {: RESU
 							(AndCondFactEpsilon) {: RESULT=new AndCondFactEpsilon(); :}			/* epsilon */
 							;
 
-CondFact				::= (CondFact)						Expr:e RelopExpr:re {: RESULT=new CondFact(e, re); RESULT.setLine(eleft); :}
+CondFact				::= (CondFact)						Expr:e Relop:R1 Expr:re {: RESULT=new CondFact(e, R1, re); RESULT.setLine(eleft); :}
 							;
 
 RelopExpr				::= (RelopExprExpr)					Relop:r Expr:e {: RESULT=new RelopExprExpr(r, e); RESULT.setLine(rleft); :}

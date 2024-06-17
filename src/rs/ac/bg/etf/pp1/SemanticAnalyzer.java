@@ -23,6 +23,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	private Struct noType = Tab.noType;
 	private boolean ismain = false;
 	private Obj currentMethod;
+	private boolean returnedFromCurrentMethod = false;
 	private int nVars;
 
 
@@ -30,7 +31,9 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 //	Semantic pass code, context conditions
 //****************************************************************************************************************
 
+//****************************************************************************************************************
 //	Statement
+//****************************************************************************************************************
 	
 	@Override
 	public void visit(StmtRead stmtRead) {
@@ -66,8 +69,31 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 		}
 	}
 	
+	@Override
+	public void visit(StmtRet stmtRet) {
+		if(currentMethod == null || currentMethod == Tab.noObj) {
+			error_report("Return statement outside of method", stmtRet);
+			return;
+		}
+		if(stmtRet.getExprEpsilon() instanceof ExprEpsilonExpr) {
+			ExprEpsilonExpr expr = (ExprEpsilonExpr) stmtRet.getExprEpsilon();
+			if(!expr.getExpr().struct.equals(currentMethod.getType())) {
+				error_report("Trying to return type: " + expr.getExpr().struct.getKind() + " but expecting type: " + currentMethod.getType().getKind(), expr);
+			}
+			returnedFromCurrentMethod = true;
+			return;
+		}
+		if(currentMethod != null && currentMethod != Tab.noObj) {
+			if(currentMethod.getType() != noType)
+				error_report("Return of non void value for void method", stmtRet);
+		}
+	}
 	
+	
+//****************************************************************************************************************
 //	Designator statement
+//****************************************************************************************************************
+	
 	@Override
 	public void visit(DStmtDesAExpr dStmtDesAExpr) {
 //		Check if variable, element of an array [Field inside class for C]
@@ -109,7 +135,9 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	
 	
 	
-//	Expr, Term
+//****************************************************************************************************************
+//	Expression and Term
+//****************************************************************************************************************
 	
 	@Override
 	public void visit(MulFactorFactor mulFactorFactor) {
@@ -180,7 +208,17 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 		expr.struct = expr.getTerm().struct;
 	}
 	
+	@Override
+	public void visit(ExprEpsilon expr) {
+		if(expr instanceof ExprEpsilonExpr)
+			expr.struct = ((ExprEpsilonExpr) expr).getExpr().struct;
+		else 
+			expr.struct = Tab.noType;
+	}
+	
+//****************************************************************************************************************
 //	Designator
+//****************************************************************************************************************
 	
 	@Override
 	public void visit(DesignatorVar designatorVar) {
@@ -233,7 +271,9 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 		designatorArrName.obj = desObj;
 	}
 
+//****************************************************************************************************************
 //	Factor
+//****************************************************************************************************************
 	
 	@Override
 	public void visit(FactorOpNew factorOpNew) {
@@ -316,7 +356,10 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 //****************************************************************************************************************
 	
 	
-//	Var declarations
+//****************************************************************************************************************
+//	Variables
+//****************************************************************************************************************
+	
 	@Override
 	public void visit(VarDeclarationVar varDeclarationVar) {
 		Obj varObj = null;
@@ -363,8 +406,12 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 			info_report("Local array declaration: " + varDeclarationArray.getArrName() + " in method: " + currentMethod.getName(), varDeclarationArray);
 	}
 	
-//	Method declarations
+//****************************************************************************************************************
+//	Methods
+//****************************************************************************************************************
+	
 	public void visit(MethodName methodName) {
+//		For A
 		Obj metObj = null;
 		metObj = Tab.find(methodName.getMName());
 		if(metObj != Tab.noObj) {
@@ -384,21 +431,34 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 				error_report("Main method declared more than once", methodName);
 			}
 			ismain = true;
-		}			
-		methodName.obj = currentMethod = Tab.insert(Obj.Meth, methodName.getMName(), noType);
+		}
+		methodName.obj = currentMethod = Tab.insert(Obj.Meth, methodName.getMName(), currentType);
 		Tab.openScope();
+		returnedFromCurrentMethod = false;
 	}
 	
 	@Override
 	public void visit(MethodDecl methodDecl) {
+		if(returnedFromCurrentMethod == false && currentMethod.getType() != noType)
+			error_report("There was no return statement for this method", methodDecl);
 		Tab.chainLocalSymbols(currentMethod);
 		Tab.closeScope();
 		currentMethod = null;
+		returnedFromCurrentMethod = false;
 	}
 	
 	
-//	Constant declaration
+//****************************************************************************************************************
+//	Constants
+//****************************************************************************************************************
 
+//	For B
+	@Override
+	public void visit(TypeVoidVoid typeVoidVoid) {
+		currentType = noType;
+	}
+//	
+	
 	@Override
 	public void visit(Type type) {
 //		If class[When doing C], name must be declared before
@@ -456,6 +516,10 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 		conObj.setAdr(constant);
 		info_report("Constant declaration: " + constDeclAssign.getVName(), constDeclAssign);
 	}
+	
+//****************************************************************************************************************
+//	Program
+//****************************************************************************************************************
 	
 //	Always for concrete classes, not abstract
 	@Override

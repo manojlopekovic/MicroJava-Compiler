@@ -1,17 +1,29 @@
 program Test
-	const int nula = 0, dva = 2;
-	const int jedan = 1;
-	const int pet = 5;
-
 {
 
-	void main()
-	int a, b, c;
-	{
-		c = 6;
+	int methInt(){
+	
+		return 1;
+	}
+	
+	bool methBool(){
 		
-		c = c + (pet * jedan - 1) * c - (3 % 2 + 3 * 2 - 3);
-		print(c);
+		return true;
+	}
+	
+	char methChar(){
+	
+		return 'a';
+	}
+	
+	void methVoid(){
+	
+		return;
+	}
+
+	void main()
+	{
+		
 		
 	}
 
