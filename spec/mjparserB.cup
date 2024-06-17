@@ -56,7 +56,7 @@ scan with {:
 /* TERMINALS */
 
 /* Key words */
-terminal PROG, CONST, VOID, READ, PRINT, NEW, RETURN, RANGE, IF, ELSE, BREAK, CONTINUE, FOR, IN, EOL;
+terminal PROG, CONST, VOID, READ, PRINT, NEW, RETURN, RANGE, IF, ELSE, BREAK, CONTINUE, FOR, IN;
 /* terminal NAMESPACE; */
 /* terminal STATIC; */
 
@@ -105,7 +105,7 @@ nonterminal VarDeclList, VarDeclaration, VarDeclMul;
 nonterminal MethodDeclMul;
 nonterminal StatementList;
 nonterminal TypeVoid;
-nonterminal FormParsMul, FormParsDecl;
+nonterminal FormParsMul, FormParsDecl, FormParsList;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct AddTerm, MulFactor;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct ExprEpsilon;
 nonterminal FactorSign;
@@ -217,8 +217,9 @@ MethodDeclMul			::= (MethodDeclMulRep)				MethodDeclMul MethodDecl
 							(MethodDeclMulEpsilon)			/* epsilon */
 							;
 							
-MethodDecl				::= (MethodDecl)					TypeVoid MethodName LPAREN FormPars RPAREN VarDeclMul LBRACE StatementList RBRACE
+MethodDecl				::= (MethodDecl)					TypeVoid MethodName LPAREN FormPars VarDeclMul LBRACE StatementList RBRACE
 							;
+							
 							
 MethodName				::= (MethodName)					IDENT:mName
 							;
@@ -228,19 +229,29 @@ TypeVoid				::=	(TypeVoidType)					Type:vType
 							(TypeVoidVoid)					VOID
 							;
 
-FormPars				::= (FormParsPars)					FormParsDecl FormParsMul
+FormPars				::= (FormParsPars)					FormParsList
 							|
-							(FormParsEpsilon)				/* epsilon */
+							(FormParsEpsilon)				RPAREN;
+							
+FormParsList			::= (FormParsMany)					FormParsMul FormParsList
+							|
+							(FormParsOne)					FormParsDecl
+							;		 			
+
+FormParsMul				::= (FormParsMulRep)				Type:vType IDENT:vName COMMA 
+							|
+							(FormParsMulArr)				Type:vType IDENT:vName LBRACKET RBRACKET COMMA
+							|
+							(FormParsMulErr)				error COMMA:e
+							{: parser.report_error("Handling error in declaration of formal parameters till COMMA in line " + eleft, null);  :}
 							;
 
-FormParsMul				::= (FormParsMulRep)				COMMA FormParsDecl FormParsMul
+FormParsDecl			::= (FormsParsDeclVar)				Type:vType IDENT:vName RPAREN
 							|
-							(FormParsMulEpsilon)			/* epsilon */	
-							;
-
-FormParsDecl			::= (FormsParsDeclVar)				Type:vType IDENT:vName
+							(FormsParsDeclArr)				Type:vType IDENT:vName LBRACKET RBRACKET RPAREN
 							|
-							(FormsParsDeclArr)				Type:vType IDENT:vName LBRACKET RBRACKET
+							(FormParsDeclErr)				error RPAREN:e
+							{: parser.report_error("Handling error in declaration of formal parameters till PAREN in line " + eleft, null);  :}
 							;
 							
 Type					::= (Type)							IDENT:tName
@@ -265,7 +276,7 @@ Matched					::= (StmtDesignatorStmt)			DesignatorStatement:des SEMI
 							|
 							(StmtRet)						RETURN ExprEpsilon:expr SEMI
 							|
-							(StmtMatched)					IF LPAREN Condition:cond RPAREN Matched:match ELSE Matched:unmatch
+							(StmtMatched)					IF LPAREN Condition:cond Matched:match ELSE Matched:unmatch
 							|
 							(StmtBreak) 					BREAK SEMI
 							|
@@ -276,12 +287,15 @@ Matched					::= (StmtDesignatorStmt)			DesignatorStatement:des SEMI
 							(StmtStmt)						LBRACE StatementList RBRACE
 							;
 
-Unmatched				::= (UnmatchedIf)					IF LPAREN Condition:cond RPAREN Statement:stmt
+Unmatched				::= (UnmatchedIf)					IF LPAREN Condition:cond Statement:stmt
 							|
-							(UnmatchedIfElse)				IF LPAREN Condition:cond RPAREN Matched:match ELSE Unmatched:unmatch				
+							(UnmatchedIfElse)				IF LPAREN Condition:cond Matched:match ELSE Unmatched:unmatch				
 							;
 
-Condition				::= (Condition)						CondTerm:ct OrCondTerm
+Condition				::= (ConditionNoErr)				CondTerm:ct OrCondTerm RPAREN
+							|
+							(ConditionErr)					error:e RPAREN
+							{: parser.report_error("Handling error in if condition till PAREN in line " + eleft, null);  :}
 							;
 
 OrCondTerm				::= (OrCondTermOr)					OrCondTerm LOGOR CondTerm:ct

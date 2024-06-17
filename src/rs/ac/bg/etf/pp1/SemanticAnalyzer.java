@@ -33,7 +33,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	private Obj currentMethod;
 	private boolean returnedFromCurrentMethod = false;
 	private int nVars;
-	private Obj calledMethod;
+	private Obj calledMethod = Tab.noObj;
 	private Stack<Obj> methodStack = new Stack<>(); 
 
 
@@ -46,11 +46,11 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 //****************************************************************************************************************	
 	
 	@Override
-	public void visit(Condition condition) {
+	public void visit(ConditionNoErr condition) {
 		if(condition.getOrCondTerm() instanceof OrCondTermOr) {
 			OrCondTermOr orCondTermOr = (OrCondTermOr) condition.getOrCondTerm();
-			if(!condition.getOrCondTerm().struct.compatibleWith(orCondTermOr.struct)) {
-				error_report("Expressions are not compatible in condition[ " + condition.getOrCondTerm().struct.getKind() + ", " + orCondTermOr.struct.getKind() + " ]" , condition);
+			if(!condition.getOrCondTerm().struct.compatibleWith(boolType)) {
+				error_report("Expressions are not compatible in condition[ " + condition.getOrCondTerm().struct.getKind() + ", " + boolType.getKind() + " ]" , condition);
 				condition.struct = noType;
 				return;
 			}
@@ -207,6 +207,12 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 		if(!dStmtDesAExpr.getExpr().struct.assignableTo(dStmtDesAExpr.getDesignator().obj.getType())) {
 			error_report("Trying to assign variable type: " + dStmtDesAExpr.getExpr().struct.getKind() + " to: " + dStmtDesAExpr.getDesignator().obj.getName() + ", which is of type: " + dStmtDesAExpr.getDesignator().obj.getType().getKind(), dStmtDesAExpr);
 			return;
+		}
+		if(dStmtDesAExpr.getExpr().getTerm().getFactor().getFactorOp() instanceof FactorOpDesignator) {
+			FactorOpDesignator factorOpDesignator = (FactorOpDesignator) dStmtDesAExpr.getExpr().getTerm().getFactor().getFactorOp();
+			if(factorOpDesignator.getDesignator().obj.getKind() == Obj.Meth) {
+				error_report("Method name: " + factorOpDesignator.getDesignator().obj.getName() + " cannot be called withoud parenthesis", factorOpDesignator);
+			}
 		}
 	}
 
@@ -529,30 +535,58 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 //	Methods
 //****************************************************************************************************************
 	
+	Stack<Obj> formalParamStack = new Stack<>();
+	
 	@Override
 	public void visit(FormParsPars formPars) {
 		int i = 1;
-		if(formPars.getFormParsMul() instanceof FormParsMulRep) {
-			FormParsMulRep countParsMulRep = (FormParsMulRep) formPars.getFormParsMul();
+		if(formPars.getFormParsList() instanceof FormParsMany) {
+			FormParsMany countParsMulRep = (FormParsMany) formPars.getFormParsList();
 			i++;
-			while(countParsMulRep.getFormParsMul() instanceof FormParsMulRep) {
+			while(countParsMulRep.getFormParsList() instanceof FormParsMany) {
 				i++;
-				countParsMulRep = (FormParsMulRep)countParsMulRep.getFormParsMul();
+				countParsMulRep = (FormParsMany)countParsMulRep.getFormParsList();
 			}
 		}
-		currentMethod.setLevel(i);
+		currentMethod.setLevel(formalParamStack.size());
+		while(!formalParamStack.empty()) {
+			Obj obj = formalParamStack.pop();
+			obj = Tab.insert(obj.getKind(), obj.getName(), obj.getType());
+			obj.setFpPos(1);
+		}
+	}
+	
+	@Override
+	public void visit(FormParsEpsilon formPars) {
+		currentMethod.setLevel(0);
 	}
 	
 	@Override
 	public void visit(FormsParsDeclArr formsParsDeclArr) {
-		Obj arrFormObj = Tab.insert(Obj.Var, formsParsDeclArr.getVName(), new Struct(Struct.Array, currentType));
+		Obj arrFormObj = new Obj(Obj.Var, formsParsDeclArr.getVName(), new Struct(Struct.Array, currentType));
 		arrFormObj.setFpPos(1);
+		formalParamStack.push(arrFormObj);
 	}
 	
 	@Override
 	public void visit(FormsParsDeclVar formsParsDeclVar) {
-		Obj varFormObj = Tab.insert(Obj.Var, formsParsDeclVar.getVName(), currentType);
+		Obj varFormObj = new Obj(Obj.Var, formsParsDeclVar.getVName(), currentType);
 		varFormObj.setFpPos(1);
+		formalParamStack.push(varFormObj);
+	}
+	
+	@Override
+	public void visit(FormParsMulRep formParsMulRep) {
+		Obj varFormObj = new Obj(Obj.Var, formParsMulRep.getVName(), currentType);
+		varFormObj.setFpPos(1);
+		formalParamStack.push(varFormObj);
+	}
+	
+	@Override
+	public void visit(FormParsMulArr formParsMulArr) {
+		Obj arrFormObj = new Obj(Obj.Var, formParsMulArr.getVName(), new Struct(Struct.Array, currentType));
+		arrFormObj.setFpPos(1);
+		formalParamStack.push(arrFormObj);
 	}
 	
 	@Override
@@ -576,7 +610,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 		int i = 0;
 		for (Obj obj : formParsArrayList) {
 			if(obj.getFpPos() == 1)
-				formParsCollection.add(obj);
+				formParsCollection.add(0, obj);
 		}
 		for (Obj obj : formParsCollection) {
 			Struct struct = actParsCollection.get(i);
@@ -590,7 +624,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	
 	@Override
 	public void visit(ActParsEpsilon actPars) {
-		if(calledMethod.getLevel() != 0) {
+		if(calledMethod != Tab.noObj && calledMethod.getLevel() != 0) {
 			error_report("Difference in numbers of formal parameters to actual parameters. Expected: " + calledMethod.getLevel() + " got: " + 0, actPars);
 			return;
 		}

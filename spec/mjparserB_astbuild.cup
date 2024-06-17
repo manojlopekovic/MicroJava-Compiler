@@ -56,7 +56,7 @@ scan with {:
 /* TERMINALS */
 
 /* Key words */
-terminal PROG, CONST, VOID, READ, PRINT, NEW, RETURN, RANGE, IF, ELSE, BREAK, CONTINUE, FOR, IN, EOL;
+terminal PROG, CONST, VOID, READ, PRINT, NEW, RETURN, RANGE, IF, ELSE, BREAK, CONTINUE, FOR, IN;
 /* terminal NAMESPACE; */
 /* terminal STATIC; */
 
@@ -113,6 +113,7 @@ nonterminal StatementList StatementList;
 nonterminal TypeVoid TypeVoid;
 nonterminal FormParsMul FormParsMul;
 nonterminal FormParsDecl FormParsDecl;
+nonterminal FormParsList FormParsList;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct AddTerm, MulFactor;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct ExprEpsilon;
 nonterminal FactorSign FactorSign;
@@ -227,8 +228,9 @@ MethodDeclMul			::= (MethodDeclMulRep)				MethodDeclMul:M1 MethodDecl:M2 {: RESU
 							(MethodDeclMulEpsilon) {: RESULT=new MethodDeclMulEpsilon(); :}			/* epsilon */
 							;
 							
-MethodDecl				::= (MethodDecl)					TypeVoid:T1 MethodName:M2 LPAREN FormPars:F3 RPAREN VarDeclMul:V4 LBRACE StatementList:S5 RBRACE {: RESULT=new MethodDecl(T1, M2, F3, V4, S5); RESULT.setLine(T1left); :}
+MethodDecl				::= (MethodDecl)					TypeVoid:T1 MethodName:M2 LPAREN FormPars:F3 VarDeclMul:V4 LBRACE StatementList:S5 RBRACE {: RESULT=new MethodDecl(T1, M2, F3, V4, S5); RESULT.setLine(T1left); :}
 							;
+							
 							
 MethodName				::= (MethodName)					IDENT:mName {: RESULT=new MethodName(mName); RESULT.setLine(mNameleft); :}
 							;
@@ -238,19 +240,29 @@ TypeVoid				::=	(TypeVoidType)					Type:vType {: RESULT=new TypeVoidType(vType);
 							(TypeVoidVoid)					VOID {: RESULT=new TypeVoidVoid(); :}
 							;
 
-FormPars				::= (FormParsPars)					FormParsDecl:F1 FormParsMul:F2 {: RESULT=new FormParsPars(F1, F2); RESULT.setLine(F1left); :}
+FormPars				::= (FormParsPars)					FormParsList:F1 {: RESULT=new FormParsPars(F1); RESULT.setLine(F1left); :}
 							|
-							(FormParsEpsilon) {: RESULT=new FormParsEpsilon(); :}				/* epsilon */
+							(FormParsEpsilon)				RPAREN {: RESULT=new FormParsEpsilon(); :};
+							
+FormParsList			::= (FormParsMany)					FormParsMul:F1 FormParsList:F2 {: RESULT=new FormParsMany(F1, F2); RESULT.setLine(F1left); :}
+							|
+							(FormParsOne)					FormParsDecl:F1 {: RESULT=new FormParsOne(F1); RESULT.setLine(F1left); :}
+							;		 			
+
+FormParsMul				::= (FormParsMulRep)				Type:vType IDENT:vName COMMA {: RESULT=new FormParsMulRep(vType, vName); RESULT.setLine(vTypeleft); :} 
+							|
+							(FormParsMulArr)				Type:vType IDENT:vName LBRACKET RBRACKET COMMA {: RESULT=new FormParsMulArr(vType, vName); RESULT.setLine(vTypeleft); :}
+							|
+							(FormParsMulErr)				error COMMA:e
+							{: parser.report_error("Handling error in declaration of formal parameters till COMMA in line " + eleft, null);  :} {: RESULT=new FormParsMulErr(); :}
 							;
 
-FormParsMul				::= (FormParsMulRep)				COMMA FormParsDecl:F1 FormParsMul:F2 {: RESULT=new FormParsMulRep(F1, F2); RESULT.setLine(F1left); :}
+FormParsDecl			::= (FormsParsDeclVar)				Type:vType IDENT:vName RPAREN {: RESULT=new FormsParsDeclVar(vType, vName); RESULT.setLine(vTypeleft); :}
 							|
-							(FormParsMulEpsilon) {: RESULT=new FormParsMulEpsilon(); :}			/* epsilon */	
-							;
-
-FormParsDecl			::= (FormsParsDeclVar)				Type:vType IDENT:vName {: RESULT=new FormsParsDeclVar(vType, vName); RESULT.setLine(vTypeleft); :}
+							(FormsParsDeclArr)				Type:vType IDENT:vName LBRACKET RBRACKET RPAREN {: RESULT=new FormsParsDeclArr(vType, vName); RESULT.setLine(vTypeleft); :}
 							|
-							(FormsParsDeclArr)				Type:vType IDENT:vName LBRACKET RBRACKET {: RESULT=new FormsParsDeclArr(vType, vName); RESULT.setLine(vTypeleft); :}
+							(FormParsDeclErr)				error RPAREN:e
+							{: parser.report_error("Handling error in declaration of formal parameters till PAREN in line " + eleft, null);  :} {: RESULT=new FormParsDeclErr(); :}
 							;
 							
 Type					::= (Type)							IDENT:tName {: RESULT=new Type(tName); RESULT.setLine(tNameleft); :}
@@ -275,7 +287,7 @@ Matched					::= (StmtDesignatorStmt)			DesignatorStatement:des SEMI {: RESULT=ne
 							|
 							(StmtRet)						RETURN ExprEpsilon:expr SEMI {: RESULT=new StmtRet(expr); RESULT.setLine(exprleft); :}
 							|
-							(StmtMatched)					IF LPAREN Condition:cond RPAREN Matched:match ELSE Matched:unmatch {: RESULT=new StmtMatched(cond, match, unmatch); RESULT.setLine(condleft); :}
+							(StmtMatched)					IF LPAREN Condition:cond Matched:match ELSE Matched:unmatch {: RESULT=new StmtMatched(cond, match, unmatch); RESULT.setLine(condleft); :}
 							|
 							(StmtBreak) 					BREAK SEMI {: RESULT=new StmtBreak(); :}
 							|
@@ -286,12 +298,15 @@ Matched					::= (StmtDesignatorStmt)			DesignatorStatement:des SEMI {: RESULT=ne
 							(StmtStmt)						LBRACE StatementList:S1 RBRACE {: RESULT=new StmtStmt(S1); RESULT.setLine(S1left); :}
 							;
 
-Unmatched				::= (UnmatchedIf)					IF LPAREN Condition:cond RPAREN Statement:stmt {: RESULT=new UnmatchedIf(cond, stmt); RESULT.setLine(condleft); :}
+Unmatched				::= (UnmatchedIf)					IF LPAREN Condition:cond Statement:stmt {: RESULT=new UnmatchedIf(cond, stmt); RESULT.setLine(condleft); :}
 							|
-							(UnmatchedIfElse)				IF LPAREN Condition:cond RPAREN Matched:match ELSE Unmatched:unmatch {: RESULT=new UnmatchedIfElse(cond, match, unmatch); RESULT.setLine(condleft); :}				
+							(UnmatchedIfElse)				IF LPAREN Condition:cond Matched:match ELSE Unmatched:unmatch {: RESULT=new UnmatchedIfElse(cond, match, unmatch); RESULT.setLine(condleft); :}				
 							;
 
-Condition				::= (Condition)						CondTerm:ct OrCondTerm:O1 {: RESULT=new Condition(ct, O1); RESULT.setLine(ctleft); :}
+Condition				::= (ConditionNoErr)				CondTerm:ct OrCondTerm:O1 RPAREN {: RESULT=new ConditionNoErr(ct, O1); RESULT.setLine(ctleft); :}
+							|
+							(ConditionErr)					error:e RPAREN
+							{: parser.report_error("Handling error in if condition till PAREN in line " + eleft, null);  :} {: RESULT=new ConditionErr(); :}
 							;
 
 OrCondTerm				::= (OrCondTermOr)					OrCondTerm:O1 LOGOR CondTerm:ct {: RESULT=new OrCondTermOr(O1, ct); RESULT.setLine(O1left); :}
