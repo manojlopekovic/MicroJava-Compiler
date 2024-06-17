@@ -86,7 +86,8 @@ nonterminal DesignatorStatement;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj Designator;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct Term, Factor, Expr;
 nonterminal Addop, Mulop;
-nonterminal Condition, CondFact, Relop, CondTerm;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct Condition, CondFact, CondTerm;
+nonterminal Relop;
 nonterminal ActPars;
 
 /* Helper */
@@ -108,8 +109,8 @@ nonterminal rs.etf.pp1.symboltable.concepts.Struct ExprEpsilon;
 nonterminal FactorSign;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct FactorOp;
 nonterminal Matched, Unmatched;
-nonterminal ForDecl, DesStmtList, CondFactMay, DesStmtMul;
-nonterminal RelopExpr, OrCondTerm, AndCondFact;
+nonterminal ForDecl, DesStmtList, DesStmtMul;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct OrCondTerm, AndCondFact, CondFactMay;
 nonterminal ExprList;
 nonterminal IfCond;
 /* nonterminal DesignatorComma; */
@@ -292,11 +293,6 @@ AndCondFact				::= (AndCondFactAnd)				AndCondFact	LOGAND CondFact:cf
 							;
 
 CondFact				::= (CondFact)						Expr:e Relop Expr:re
-							;
-
-RelopExpr				::= (RelopExprExpr)					Relop:r Expr:e
-							|
-							(RelopExprEpsilon)				/* epsilon */
 							;
 
 CondFactMay				::= (CondFactMayCond)				CondFact

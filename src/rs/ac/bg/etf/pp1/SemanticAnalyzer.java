@@ -32,6 +32,82 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 //****************************************************************************************************************
 
 //****************************************************************************************************************
+//	If, Else, Conditions
+//****************************************************************************************************************	
+	
+	@Override
+	public void visit(Condition condition) {
+		if(condition.getOrCondTerm() instanceof OrCondTermOr) {
+			OrCondTermOr orCondTermOr = (OrCondTermOr) condition.getOrCondTerm();
+			if(!condition.getOrCondTerm().struct.compatibleWith(orCondTermOr.struct)) {
+				error_report("Expressions are not compatible in condition[ " + condition.getOrCondTerm().struct.getKind() + ", " + orCondTermOr.struct.getKind() + " ]" , condition);
+				condition.struct = noType;
+				return;
+			}
+		}
+		condition.struct = condition.getCondTerm().struct;
+		
+	}
+	
+	@Override
+	public void visit(OrCondTermOr orCondTerm) {
+		if(orCondTerm.getOrCondTerm() instanceof OrCondTermOr) {
+			if(!orCondTerm.getOrCondTerm().struct.compatibleWith(orCondTerm.getCondTerm().struct)) {
+				error_report("Expressions are not compatible in or comparisons[ " + orCondTerm.getOrCondTerm().struct.getKind() + ", " + orCondTerm.getCondTerm().struct.getKind() + " ]" , orCondTerm);
+				orCondTerm.struct = noType;
+				return;
+			}
+		}
+		orCondTerm.struct = orCondTerm.getCondTerm().struct;
+	}
+	
+	@Override
+	public void visit(CondTerm condTerm) {
+		if(condTerm.getAndCondFact() instanceof AndCondFactAnd) {
+			AndCondFactAnd andCondFactAnd = (AndCondFactAnd) condTerm.getAndCondFact();
+			if(!condTerm.getCondFact().struct.compatibleWith(andCondFactAnd.struct)) {
+				error_report("Expressions are not compatible in conditional term[ " + condTerm.getCondFact().struct.getKind() + ", " + andCondFactAnd.struct.getKind() + " ]" , condTerm);
+				condTerm.struct = noType;
+				return;
+			}
+		}
+		condTerm.struct = condTerm.getCondFact().struct;
+	}
+	
+	@Override
+	public void visit(AndCondFactAnd andCondFact) {
+		if(andCondFact.getAndCondFact() instanceof AndCondFactAnd) {
+			if(!andCondFact.getAndCondFact().struct.compatibleWith(andCondFact.getCondFact().struct)) {
+				error_report("Expressions are not compatible in and comparisons[ " + andCondFact.getAndCondFact().struct.getKind() + ", " + andCondFact.getCondFact().struct.getKind() + " ]" , andCondFact);
+				andCondFact.struct = noType;
+				return;
+			}
+		}
+		andCondFact.struct = andCondFact.getCondFact().struct;
+	}
+	
+	@Override
+	public void visit(CondFact condFact) {
+		if(!condFact.getExpr().struct.compatibleWith(condFact.getExpr1().struct)) {
+			error_report("Expressions not compatible in conditional fact[ " + condFact.getExpr().struct.getKind() + ", " + condFact.getExpr1().struct.getKind() + " ]" , condFact);
+			condFact.struct = noType;
+			return;
+		}
+		if(condFact.getExpr().struct.getKind() == Struct.Array) {
+			if(!((condFact.getRelop() instanceof RelopEquals) || condFact.getRelop() instanceof RelopNotEquals)) {
+				error_report("Relational operator other than == or != used with array type", condFact);
+				condFact.struct = noType;
+				return;
+			}
+		}
+		condFact.struct = condFact.getExpr().struct;
+	}
+	
+//****************************************************************************************************************
+//	For loops
+//****************************************************************************************************************
+	
+//****************************************************************************************************************
 //	Statement
 //****************************************************************************************************************
 	

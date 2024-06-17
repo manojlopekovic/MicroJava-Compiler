@@ -89,10 +89,8 @@ nonterminal rs.etf.pp1.symboltable.concepts.Obj Designator;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct Term, Factor, Expr;
 nonterminal Addop Addop;
 nonterminal Mulop Mulop;
-nonterminal Condition Condition;
-nonterminal CondFact CondFact;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct Condition, CondFact, CondTerm;
 nonterminal Relop Relop;
-nonterminal CondTerm CondTerm;
 nonterminal ActPars ActPars;
 
 /* Helper */
@@ -121,11 +119,8 @@ nonterminal Matched Matched;
 nonterminal Unmatched Unmatched;
 nonterminal ForDecl ForDecl;
 nonterminal DesStmtList DesStmtList;
-nonterminal CondFactMay CondFactMay;
 nonterminal DesStmtMul DesStmtMul;
-nonterminal RelopExpr RelopExpr;
-nonterminal OrCondTerm OrCondTerm;
-nonterminal AndCondFact AndCondFact;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct OrCondTerm, AndCondFact, CondFactMay;
 nonterminal ExprList ExprList;
 nonterminal IfCond IfCond;
 /* nonterminal DesignatorComma; */
@@ -308,11 +303,6 @@ AndCondFact				::= (AndCondFactAnd)				AndCondFact:A1	LOGAND CondFact:cf {: RESU
 							;
 
 CondFact				::= (CondFact)						Expr:e Relop:R1 Expr:re {: RESULT=new CondFact(e, R1, re); RESULT.setLine(eleft); :}
-							;
-
-RelopExpr				::= (RelopExprExpr)					Relop:r Expr:e {: RESULT=new RelopExprExpr(r, e); RESULT.setLine(rleft); :}
-							|
-							(RelopExprEpsilon) {: RESULT=new RelopExprEpsilon(); :}				/* epsilon */
 							;
 
 CondFactMay				::= (CondFactMayCond)				CondFact:C1 {: RESULT=new CondFactMayCond(C1); RESULT.setLine(C1left); :}
