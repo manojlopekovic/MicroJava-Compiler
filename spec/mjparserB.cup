@@ -97,7 +97,7 @@ nonterminal ActPars;
 nonterminal Decl;
 /* nonterminal DeclMul; */
 nonterminal ProgramName;
-nonterminal rs.etf.pp1.symboltable.concepts.Obj  MethodName;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj MethodName;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj DesignatorArrName;
 nonterminal ConstDeclList, ConstDeclAssign;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct TypeConst;
@@ -370,12 +370,12 @@ ConditionListComp		::= (ConditionListCompNoErr)		CondTerm:ct OrCondTerm RBRACKET
 MethodCallName			::= (MethodCallName)				Designator:des
 							;
 
-ActPars					::= (ActParsExpr)					Expr:expr ExprList:exprList
+ActPars					::= (ActParsExpr)					ExprList:exprList Expr:expr 
 							|
 							(ActParsEpsilon)				/* epsilon */
 							;
 
-ExprList				::= (ExprListExpr)					ExprList:exprList COMMA Expr:expr
+ExprList				::= (ExprListExpr)					ExprList:exprList Expr:expr COMMA
 							|
 							(ExprListEpsilon)				/* epsilon */
 							;

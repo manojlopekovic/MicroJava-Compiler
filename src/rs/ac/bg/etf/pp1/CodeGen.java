@@ -1,11 +1,14 @@
 package rs.ac.bg.etf.pp1;
 
 import java.awt.Label;
+import java.nio.channels.spi.AsynchronousChannelProvider;
 import java.security.KeyPair;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 
 import java_cup.internal_error;
 import rs.ac.bg.etf.pp1.ast.*;
@@ -26,12 +29,6 @@ public class CodeGen extends VisitorAdaptor{
 // Statement
 //****************************************************************************************************************	
 	
-	@Override
-	public void visit(StmtRet stmtRet) {
-//		Should put data for B
-		Code.put(Code.exit);
-		Code.put(Code.return_);
-	}
 	
 	@Override
 	public void visit(StmtRead stmtRead) {
@@ -288,6 +285,38 @@ public class CodeGen extends VisitorAdaptor{
 //****************************************************************************************************************
 //	Methods
 //****************************************************************************************************************
+	
+	private Obj calledMethod = Tab.noObj;
+	private Stack<Obj> methodStack = new Stack<>();
+	
+	@Override
+	public void visit(ActParsExpr actParsExpr) {
+		Collection<Obj> localsList =  calledMethod.getLocalSymbols();
+		Obj[] objArr = localsList.toArray(new Obj[0]);
+		for(int i = 0; i < localsList.size(); i++)
+			Code.store(objArr[i]);
+		for(int i = 0; i < localsList.size(); i++)
+			Code.load(objArr[i]);
+		int adr = calledMethod.getAdr();
+		Code.put(Code.call);
+		Code.put2(adr - (Code.pc - 1));
+	}
+	
+	@Override
+	public void visit(MethodCallName methodCallName) {
+		if(!calledMethod.equals(Tab.noObj)) {
+			methodStack.push(calledMethod);
+		}
+		calledMethod = methodCallName.getDesignator().obj;
+	}
+
+	@Override
+	public void visit(StmtRet stmtRet) {
+//		Should put data for B
+		Code.put(Code.exit);
+		Code.put(Code.return_);
+	}
+	
 	@Override
 	public void visit(MethodName methodName) {
 //		Remember the address for B

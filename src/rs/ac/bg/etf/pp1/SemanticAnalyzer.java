@@ -163,6 +163,11 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	
 	@Override
 	public void visit(DStmtListComp listComp) {
+		if(listComp.getDesignator().obj.getType().getKind() != listComp.getDesignator1().obj.getType().getKind()){
+			error_report("Kinds in list comperhension are: " + listComp.getDesignator().obj.getType().getKind()
+					+ " and: " + listComp.getDesignator1().obj.getType().getKind(), listComp);
+			return;
+		}
 		if(!listComp.getDesignator().obj.getType().equals(listComp.getDesignator1().obj.getType())) {
 			error_report("Tried to do comperhension for array of type: " + listComp.getDesignator().obj.getType().getElemType().getKind() 
 					+ " with array of type: " + listComp.getDesignator1().obj.getType().getElemType().getKind(), listComp);
@@ -188,6 +193,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 			return;
 		}
 	}
+	
 	
 	private List<Obj> condHasDesObj(ConditionListCompNoErr cond){
 		List<Obj> list = new ArrayList<>(); 
@@ -240,6 +246,11 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	
 	@Override
 	public void visit(DStmtListCompIf listCompIf) {
+		if(listCompIf.getDesignator().obj.getType().getKind() != listCompIf.getDesignator1().obj.getType().getKind()){
+			error_report("Kinds in list comperhension are: " + listCompIf.getDesignator().obj.getType().getKind()
+					+ " and: " + listCompIf.getDesignator1().obj.getType().getKind(), listCompIf);
+			return;
+		}
 		if(!listCompIf.getDesignator().obj.getType().equals(listCompIf.getDesignator1().obj.getType())) {
 			error_report("Tried to do comperhension for array of type: " + listCompIf.getDesignator().obj.getType().getElemType().getKind() 
 					+ " with array of type: " + listCompIf.getDesignator1().obj.getType().getElemType().getKind(), listCompIf);
@@ -866,7 +877,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 			actParsCollection.add(0, expr.getExpr().struct);
 			while(expr.getExprList() instanceof ExprListExpr) {
 				 expr = (ExprListExpr) expr.getExprList(); 
-				 actParsCollection.add(0, expr.getExpr().struct);
+				 actParsCollection.add(expr.getExpr().struct);
 			}
 		}
 		actParsCollection.add(0, actPars.getExpr().struct);
@@ -877,7 +888,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 		int i = 0;
 		for (Obj obj : formParsArrayList) {
 			if(obj.getFpPos() == 1)
-				formParsCollection.add(0, obj);
+				formParsCollection.add(obj);
 		}
 		for (Obj obj : formParsCollection) {
 			Struct struct = actParsCollection.get(i);

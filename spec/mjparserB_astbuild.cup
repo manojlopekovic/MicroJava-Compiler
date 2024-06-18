@@ -100,7 +100,7 @@ nonterminal ActPars ActPars;
 nonterminal Decl Decl;
 /* nonterminal DeclMul; */
 nonterminal ProgramName ProgramName;
-nonterminal rs.etf.pp1.symboltable.concepts.Obj  MethodName;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj MethodName;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj DesignatorArrName;
 nonterminal ConstDeclList ConstDeclList;
 nonterminal ConstDeclAssign ConstDeclAssign;
@@ -381,12 +381,12 @@ ConditionListComp		::= (ConditionListCompNoErr)		CondTerm:ct OrCondTerm:O1 RBRAC
 MethodCallName			::= (MethodCallName)				Designator:des {: RESULT=new MethodCallName(des); RESULT.setLine(desleft); :}
 							;
 
-ActPars					::= (ActParsExpr)					Expr:expr ExprList:exprList {: RESULT=new ActParsExpr(expr, exprList); RESULT.setLine(exprleft); :}
+ActPars					::= (ActParsExpr)					ExprList:exprList Expr:expr {: RESULT=new ActParsExpr(exprList, expr); RESULT.setLine(exprListleft); :} 
 							|
 							(ActParsEpsilon) {: RESULT=new ActParsEpsilon(); :}				/* epsilon */
 							;
 
-ExprList				::= (ExprListExpr)					ExprList:exprList COMMA Expr:expr {: RESULT=new ExprListExpr(exprList, expr); RESULT.setLine(exprListleft); :}
+ExprList				::= (ExprListExpr)					ExprList:exprList Expr:expr COMMA {: RESULT=new ExprListExpr(exprList, expr); RESULT.setLine(exprListleft); :}
 							|
 							(ExprListEpsilon) {: RESULT=new ExprListEpsilon(); :}				/* epsilon */
 							;

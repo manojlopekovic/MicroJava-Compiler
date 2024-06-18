@@ -1,19 +1,16 @@
 program Test
 {
-
-	int sum(int x, int y){
-		
-		return x + y;
+	bool boolTest(int a, bool b, char c, bool b1, char c1){
+		print(a);
+		print(c);
+		print(b1);
+		print(c1);
+		return b;
 	}
-
+	
 	void main()
-	int niz1[], niz2[];
-	int a, b;
-	char c, carr[];
 	{
-		niz1 = [for sum(a,a) in niz2];
-		niz1 = [for (a + a) in niz2];
-		niz1 = [for a*2 in niz2 if sum(a, a) < 5];
+		print(boolTest(1, false, 'a', true, 'b'));
 	}
 	
 
