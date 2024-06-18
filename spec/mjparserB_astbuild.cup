@@ -131,6 +131,10 @@ nonterminal rs.etf.pp1.symboltable.concepts.Struct ConditionListComp;
 nonterminal ElseSym ElseSym;
 nonterminal EmptyState EmptyState;
 nonterminal IfSym IfSym;
+nonterminal FirstSemiSym FirstSemiSym;
+nonterminal SecondSemiSym SecondSemiSym;
+nonterminal ForRparenSym ForRparenSym;
+nonterminal ForEmptyState ForEmptyState;
 /* nonterminal DesignatorComma; */
 
 
@@ -297,9 +301,15 @@ Matched					::= (StmtDesignatorStmt)			DesignatorStatement:des SEMI {: RESULT=ne
 							|
 							(StmtContinue)					CONTINUE SEMI {: RESULT=new StmtContinue(); :}
 							|
-							(StmtFor)						ForStart:F1 LPAREN ForDecl:F2 RPAREN Matched:M3 {: RESULT=new StmtFor(F1, F2, M3); RESULT.setLine(F1left); :}
+							(StmtFor)						ForStart:F1 LPAREN ForDecl:F2 ForRparenSym:F3 Matched:M4 ForEmptyState:F5 {: RESULT=new StmtFor(F1, F2, F3, M4, F5); RESULT.setLine(F1left); :}
 							|
 							(StmtStmt)						LBRACE StatementList:S1 RBRACE {: RESULT=new StmtStmt(S1); RESULT.setLine(S1left); :}
+							;
+
+ForEmptyState			::= (ForEmptyState) {: RESULT=new ForEmptyState(); :}					/* epsilon */
+							;
+							
+ForRparenSym			::= (ForRparenSym)					RPAREN {: RESULT=new ForRparenSym(); :}
 							;
 							
 IfSym					::= (IfSym)							IF {: RESULT=new IfSym(); :}
@@ -345,16 +355,22 @@ CondFact				::= (CondFactExpr)					Expr:e {: RESULT=new CondFactExpr(e); RESULT.
 
 CondFactMay				::= (CondFactMayCond)				CondFact:C1 {: RESULT=new CondFactMayCond(C1); RESULT.setLine(C1left); :}
 							|
-							(ConfFactMayEpsilon) {: RESULT=new ConfFactMayEpsilon(); :}			/* epsilon */
-							;							
+							(CondFactMayEpsilon) {: RESULT=new CondFactMayEpsilon(); :}			/* epsilon */
+							;
+							
+FirstSemiSym			::= (FirstSemiSym)					SEMI {: RESULT=new FirstSemiSym(); :}
+							;
+							
+SecondSemiSym			::= (SecondSemiSym)					SEMI {: RESULT=new SecondSemiSym(); :}
+							;					
 
-ForDecl					::= (ForDeclAll)					DesStmtList:D1 SEMI CondFactMay:C2 SEMI DesStmtList:D3 {: RESULT=new ForDeclAll(D1, C2, D3); RESULT.setLine(D1left); :}
+ForDecl					::= (ForDeclAll)					DesStmtList:D1 FirstSemiSym:F2 CondFactMay:C3 SecondSemiSym:S4 DesStmtList:D5 {: RESULT=new ForDeclAll(D1, F2, C3, S4, D5); RESULT.setLine(D1left); :}
 							|
-							(ForDeclAllNoFirst)				SEMI CondFactMay:C1 SEMI DesStmtList:D2 {: RESULT=new ForDeclAllNoFirst(C1, D2); RESULT.setLine(C1left); :}
+							(ForDeclAllNoFirst)				FirstSemiSym:F1 CondFactMay:C2 SecondSemiSym:S3 DesStmtList:D4 {: RESULT=new ForDeclAllNoFirst(F1, C2, S3, D4); RESULT.setLine(F1left); :}
 							|
-							(ForDeclAllNoLast)				DesStmtList:D1 SEMI CondFactMay:C2 SEMI {: RESULT=new ForDeclAllNoLast(D1, C2); RESULT.setLine(D1left); :}
+							(ForDeclAllNoLast)				DesStmtList:D1 FirstSemiSym:F2 CondFactMay:C3 SecondSemiSym:S4 {: RESULT=new ForDeclAllNoLast(D1, F2, C3, S4); RESULT.setLine(D1left); :}
 							|
-							(ForDeclAllNoBoth)				SEMI CondFactMay:C1 SEMI {: RESULT=new ForDeclAllNoBoth(C1); RESULT.setLine(C1left); :} 
+							(ForDeclAllNoBoth)				FirstSemiSym:F1 CondFactMay:C2 SecondSemiSym:S3 {: RESULT=new ForDeclAllNoBoth(F1, C2, S3); RESULT.setLine(F1left); :} 
 							;
 
 DesStmtList				::= (DesStmtList)			 		DesStmtMul:D1 DesignatorStatement:D2 {: RESULT=new DesStmtList(D1, D2); RESULT.setLine(D1left); :} 

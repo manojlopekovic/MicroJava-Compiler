@@ -1,16 +1,13 @@
 package rs.ac.bg.etf.pp1;
 
-import java.awt.Label;
-import java.nio.channels.spi.AsynchronousChannelProvider;
-import java.security.KeyPair;
-import java.util.AbstractMap;
+
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
-import java_cup.internal_error;
 import rs.ac.bg.etf.pp1.ast.*;
 import rs.etf.pp1.mj.runtime.Code;
 import rs.etf.pp1.symboltable.Tab;
@@ -26,11 +23,129 @@ public class CodeGen extends VisitorAdaptor{
 	}
 
 //****************************************************************************************************************
+// For loop
+//****************************************************************************************************************		
+	
+	private Stack<Boolean> forLoopStack = new Stack<>();
+	private boolean forLoop = false;
+	private Stack<Boolean> forLoopCondStack = new Stack<>();
+	private boolean forLoopCond = false;
+	private Stack<Integer> condAddrStack = new Stack<>();
+	private Stack<Integer> secondDesAddrStack = new Stack<>();
+	private int secondDesAddr = -1;
+	private Stack<Integer> exitAddrStack = new Stack<>();
+	private Stack<Integer> stmtAddrStack = new Stack<>();
+	
+	@Override
+	public void visit(DesStmtList desStmtList) {
+//		Only before first iteration
+		if(!forLoopCond) {
+		} 
+//		After each iteration
+		else {
+			
+			Code.putJump(condAddrStack.peek());
+		}
+	}
+	
+	@Override
+	public void visit(FirstSemiSym firstSemiSym) {
+//		condAddr = Code.pc;
+		condAddrStack.push(Code.pc);
+	}
+	
+	@Override
+	public void visit(SecondSemiSym secondSemiSym) {
+//		secondDesAddr = Code.pc;
+		secondDesAddrStack.push(Code.pc);
+	}
+	
+	@Override
+	public void visit(CondFactMayCond codFactMayCond) {
+		forLoopCond = true;
+		Code.loadConst(1);
+		Code.putFalseJump(Code.eq, 0);
+//		exitAddr = Code.pc - 2;
+		exitAddrStack.push(Code.pc - 2);
+		Code.putJump(0);
+//		stmtAddr = Code.pc - 2;
+		stmtAddrStack.push(Code.pc - 2);
+	}
+	
+	@Override
+	public void visit(ForRparenSym forRparenSym) {
+//		stmtAddr = Code.pc;
+		if(!stmtAddrStack.empty())
+			Code.fixup(stmtAddrStack.pop());
+	}
+	
+	@Override
+	public void visit(ForEmptyState forEmptyState) {
+		Code.putJump(secondDesAddrStack.peek());
+	}
+	
+	@Override
+	public void visit(CondFactMayEpsilon condFactMayEpsilon) {
+		forLoopCond = true;
+		Code.putJump(0);
+//		stmtAddr = Code.pc - 2;
+		stmtAddrStack.push(Code.pc - 2);
+	}
+	
+	@Override
+	public void visit(ForStart forStart) {
+		if(forLoop)
+			forLoopStack.push(forLoop);
+		forLoop = true;
+		if(forLoopCond)
+			forLoopCondStack.push(forLoopCond);
+		forLoopCond = false;
+		depth++;
+	}
+	
+	@Override
+	public void visit(StmtFor stmtFor) {
+//		Code.fixup(exitAddr);
+		if(!exitAddrStack.empty())
+			Code.fixup(exitAddrStack.pop());
+		secondDesAddrStack.pop();
+		condAddrStack.pop();
+		if(forLoopStack.empty())
+			forLoop = false;
+		else 
+			forLoop = forLoopStack.pop();
+		if(!forLoopCondStack.empty())
+			forLoopCond = forLoopCondStack.pop();
+		if(breaksDepth.get(depth) != null) {
+			for (Integer integer : breaksDepth.get(depth)) {
+				Code.fixup(integer);
+			}
+			breaksDepth.clear();
+		}
+		depth--;
+	}
+	
+	Map<Integer, List<Integer>> breaksDepth = new HashMap<>();
+	int depth = 0;
+	
+	@Override
+	public void visit(StmtBreak stmtBreak) {
+		if(breaksDepth.get(depth) == null) {
+			breaksDepth.put(depth, new ArrayList<>());
+		}
+		Code.putJump(0);
+		breaksDepth.get(depth).add(Code.pc - 2);
+	}
+	
+	@Override
+	public void visit(StmtContinue stmtContinue) {
+		Code.putJump(secondDesAddrStack.peek());
+	}
+	
+//****************************************************************************************************************
 // Conditions
 //****************************************************************************************************************		
 	
-	private int fix_pc;
-	private int end_pc;
 	private Stack<Integer> endPcStack = new Stack<>();
 	private Stack<Integer> fixPcStack = new Stack<>();
 	

@@ -118,6 +118,7 @@ nonterminal rs.etf.pp1.symboltable.concepts.Obj MethodCallName;
 nonterminal ForStart;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct ConditionListComp;
 nonterminal ElseSym, EmptyState, IfSym;
+nonterminal FirstSemiSym, SecondSemiSym, ForRparenSym, ForEmptyState;
 /* nonterminal DesignatorComma; */
 
 
@@ -284,9 +285,15 @@ Matched					::= (StmtDesignatorStmt)			DesignatorStatement:des SEMI
 							|
 							(StmtContinue)					CONTINUE SEMI
 							|
-							(StmtFor)						ForStart LPAREN ForDecl RPAREN Matched
+							(StmtFor)						ForStart LPAREN ForDecl ForRparenSym Matched ForEmptyState
 							|
 							(StmtStmt)						LBRACE StatementList RBRACE
+							;
+
+ForEmptyState			::= (ForEmptyState)					/* epsilon */
+							;
+							
+ForRparenSym			::= (ForRparenSym)					RPAREN
 							;
 							
 IfSym					::= (IfSym)							IF
@@ -332,16 +339,22 @@ CondFact				::= (CondFactExpr)					Expr:e
 
 CondFactMay				::= (CondFactMayCond)				CondFact
 							|
-							(ConfFactMayEpsilon)			/* epsilon */
-							;							
+							(CondFactMayEpsilon)			/* epsilon */
+							;
+							
+FirstSemiSym			::= (FirstSemiSym)					SEMI
+							;
+							
+SecondSemiSym			::= (SecondSemiSym)					SEMI
+							;					
 
-ForDecl					::= (ForDeclAll)					DesStmtList SEMI CondFactMay SEMI DesStmtList
+ForDecl					::= (ForDeclAll)					DesStmtList FirstSemiSym CondFactMay SecondSemiSym DesStmtList
 							|
-							(ForDeclAllNoFirst)				SEMI CondFactMay SEMI DesStmtList
+							(ForDeclAllNoFirst)				FirstSemiSym CondFactMay SecondSemiSym DesStmtList
 							|
-							(ForDeclAllNoLast)				DesStmtList SEMI CondFactMay SEMI
+							(ForDeclAllNoLast)				DesStmtList FirstSemiSym CondFactMay SecondSemiSym
 							|
-							(ForDeclAllNoBoth)				SEMI CondFactMay SEMI 
+							(ForDeclAllNoBoth)				FirstSemiSym CondFactMay SecondSemiSym 
 							;
 
 DesStmtList				::= (DesStmtList)			 		DesStmtMul DesignatorStatement 
