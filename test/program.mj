@@ -3,12 +3,14 @@ program Test
 
 	int methInt(int a, int b, int c, int d[])
 	{
+		b = d[1] + c;
+	
 		return a;
 	}
 	
 	bool methBool(bool p1){
 		
-		return true;
+		return p1;
 	}
 	
 	char methChar(){

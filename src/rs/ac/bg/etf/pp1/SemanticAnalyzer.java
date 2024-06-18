@@ -212,7 +212,18 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 			FactorOpDesignator factorOpDesignator = (FactorOpDesignator) dStmtDesAExpr.getExpr().getTerm().getFactor().getFactorOp();
 			if(factorOpDesignator.getDesignator().obj.getKind() == Obj.Meth) {
 				error_report("Method name: " + factorOpDesignator.getDesignator().obj.getName() + " cannot be called withoud parenthesis", factorOpDesignator);
+				return;
 			}
+		}
+		if(dStmtDesAExpr.getDesignator().obj.getFpPos() == 1) {
+			info_report("Assignment to formal parameter: " + dStmtDesAExpr.getDesignator().obj.getName() + " in method: " + currentMethod.getName(), dStmtDesAExpr);
+		} else if(dStmtDesAExpr.getDesignator().obj.getKind() == Obj.Var) {
+			if(dStmtDesAExpr.getDesignator().obj.getLevel() == 0) 
+				info_report("Assignment to global parameter: " + dStmtDesAExpr.getDesignator().obj.getName() + " in method: " + currentMethod.getName(), dStmtDesAExpr);
+			else 
+				info_report("Assignment to local parameter: " + dStmtDesAExpr.getDesignator().obj.getName() + " in method: " + currentMethod.getName(), dStmtDesAExpr);
+		} else if(dStmtDesAExpr.getDesignator().obj.getKind() == Obj.Elem) {
+			info_report("Assignment to array element: " + dStmtDesAExpr.getDesignator().obj.getName() + " in method: " + currentMethod.getName(), dStmtDesAExpr);
 		}
 	}
 
@@ -431,7 +442,9 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 		Obj obj = factorOpDesignator.getDesignator().obj;
 		factorOpDesignator.struct = obj.getType();
 		if(obj != Tab.noObj) {
-			if(obj.getKind() == Obj.Con) {
+			if(obj.getFpPos() == 1) {
+				info_report("Used formal parameter: " + obj.getName() + ", of method: " + currentMethod.getName(), factorOpDesignator);
+			} else if(obj.getKind() == Obj.Con) {
 				info_report("Constant: " + obj.getName() + " used from symbol table", factorOpDesignator);
 			} else if(obj.getKind() == Obj.Var) {
 				if(obj.getLevel() == 0) 
@@ -441,6 +454,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 			} else if(obj.getKind() == Obj.Elem) {
 				info_report("Array element: " + obj.getName() + " used from symbol table", factorOpDesignator);
 			}
+			
 		}
 	}
 	
@@ -639,6 +653,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 		if(calledMethod != Tab.noObj)
 			methodStack.push(calledMethod);
 		calledMethod = methodCallName.getDesignator().obj;
+		info_report("Called method: " + methodCallName.getDesignator().obj.getName(), methodCallName);
 	}
 	
 	public void visit(MethodName methodName) {
