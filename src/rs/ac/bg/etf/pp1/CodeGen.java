@@ -62,6 +62,26 @@ public class CodeGen extends VisitorAdaptor{
 		}
 	}
 	
+	@Override
+	public void visit(AndCondFactAnd andCondFactAnd) {
+		Code.put(Code.add);
+		Code.loadConst(2);
+		Code.putFalseJump(Code.eq, 0);
+		doCompareRelop();
+	}
+	
+	@Override
+	public void visit(CondTerm condTerm) {
+	}
+	
+	@Override
+	public void visit(OrCondTermOr orCondTermOr) {
+		Code.put(Code.add);
+		Code.loadConst(1);
+		Code.putFalseJump(Code.ge, 0);
+		doCompareRelop();
+	}
+	
 //****************************************************************************************************************
 // Statement
 //****************************************************************************************************************	

@@ -2,10 +2,12 @@ program Test
 {
 	
 	void main()
-	int a;
+	int a, b, c;
 	{
 		a = 1;
-		if(a <= 1){
+		b = 2;
+		c = 3;
+		if(a == 1 && b == 3 || c == 3){
 		}
 	}
 }
