@@ -336,15 +336,19 @@ CondFactMay				::= (CondFactMayCond)				CondFact:C1 {: RESULT=new CondFactMayCon
 							(ConfFactMayEpsilon) {: RESULT=new ConfFactMayEpsilon(); :}			/* epsilon */
 							;							
 
-ForDecl					::= (ForDecl)						DesStmtList:D1 SEMI CondFactMay:C2 SEMI DesStmtList:D3 {: RESULT=new ForDecl(D1, C2, D3); RESULT.setLine(D1left); :}
-							;
-
-DesStmtList				::= (DesStmtListDes)				DesignatorStatement:D1 DesStmtMul:D2 {: RESULT=new DesStmtListDes(D1, D2); RESULT.setLine(D1left); :}
+ForDecl					::= (ForDeclAll)					DesStmtList:D1 SEMI CondFactMay:C2 SEMI DesStmtList:D3 {: RESULT=new ForDeclAll(D1, C2, D3); RESULT.setLine(D1left); :}
 							|
-							(DesStmtListEpsilon) {: RESULT=new DesStmtListEpsilon(); :}			/* epsilon */
+							(ForDeclAllNoFirst)				SEMI CondFactMay:C1 SEMI DesStmtList:D2 {: RESULT=new ForDeclAllNoFirst(C1, D2); RESULT.setLine(C1left); :}
+							|
+							(ForDeclAllNoLast)				DesStmtList:D1 SEMI CondFactMay:C2 SEMI {: RESULT=new ForDeclAllNoLast(D1, C2); RESULT.setLine(D1left); :}
+							|
+							(ForDeclAllNoBoth)				SEMI CondFactMay:C1 SEMI {: RESULT=new ForDeclAllNoBoth(C1); RESULT.setLine(C1left); :} 
 							;
 
-DesStmtMul				::= (DesStmtMulRep)					COMMA DesignatorStatement:D1 DesStmtMul:D2 {: RESULT=new DesStmtMulRep(D1, D2); RESULT.setLine(D1left); :}
+DesStmtList				::= (DesStmtList)			 		DesStmtMul:D1 DesignatorStatement:D2 {: RESULT=new DesStmtList(D1, D2); RESULT.setLine(D1left); :} 
+							;
+
+DesStmtMul				::= (DesStmtMulRep)					DesStmtMul:D1 DesignatorStatement:D2 COMMA {: RESULT=new DesStmtMulRep(D1, D2); RESULT.setLine(D1left); :}
 							|
 							(DesStmtMulEpsilon) {: RESULT=new DesStmtMulEpsilon(); :}				/* epsilon */
 							;

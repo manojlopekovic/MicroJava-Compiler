@@ -1,17 +1,11 @@
 program Test
 {
-	bool boolTest(int a, bool b, char c, bool b1, char c1){
-		print(a);
-		print(c);
-		print(b1);
-		print(c1);
-		return b;
-	}
 	
 	void main()
+	int a;
 	{
-		print(boolTest(1, false, 'a', true, 'b'));
+		a = 1;
+		if(a <= 1){
+		}
 	}
-	
-
 }

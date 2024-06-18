@@ -325,15 +325,19 @@ CondFactMay				::= (CondFactMayCond)				CondFact
 							(ConfFactMayEpsilon)			/* epsilon */
 							;							
 
-ForDecl					::= (ForDecl)						DesStmtList SEMI CondFactMay SEMI DesStmtList
-							;
-
-DesStmtList				::= (DesStmtListDes)				DesignatorStatement DesStmtMul
+ForDecl					::= (ForDeclAll)					DesStmtList SEMI CondFactMay SEMI DesStmtList
 							|
-							(DesStmtListEpsilon)			/* epsilon */
+							(ForDeclAllNoFirst)				SEMI CondFactMay SEMI DesStmtList
+							|
+							(ForDeclAllNoLast)				DesStmtList SEMI CondFactMay SEMI
+							|
+							(ForDeclAllNoBoth)				SEMI CondFactMay SEMI 
 							;
 
-DesStmtMul				::= (DesStmtMulRep)					COMMA DesignatorStatement DesStmtMul
+DesStmtList				::= (DesStmtList)			 		DesStmtMul DesignatorStatement 
+							;
+
+DesStmtMul				::= (DesStmtMulRep)					DesStmtMul DesignatorStatement COMMA
 							|
 							(DesStmtMulEpsilon)				/* epsilon */
 							;

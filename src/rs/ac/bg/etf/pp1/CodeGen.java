@@ -26,6 +26,43 @@ public class CodeGen extends VisitorAdaptor{
 	}
 
 //****************************************************************************************************************
+// Conditions
+//****************************************************************************************************************		
+	
+	private void doCompareRelop() {
+		int fix1_pc = Code.pc - 2;
+		Code.loadConst(1);
+		Code.putJump(0);
+		int fix_pc = Code.pc - 2;
+		Code.fixup(fix1_pc);
+		Code.loadConst(0);
+		Code.fixup(fix_pc);
+	}
+	
+	@Override
+	public void visit(CondFactRelop condFactRelop) {
+		if(condFactRelop.getRelop() instanceof RelopEquals) {
+			Code.putFalseJump(Code.eq, 0);
+			doCompareRelop();
+		} else if (condFactRelop.getRelop() instanceof RelopNotEquals) {
+			Code.putFalseJump(Code.ne, 0);
+			doCompareRelop();
+		} else if (condFactRelop.getRelop() instanceof RelopGreater) {
+			Code.putFalseJump(Code.gt, 0);
+			doCompareRelop();
+		} else if (condFactRelop.getRelop() instanceof RelopGreaterEq) {
+			Code.putFalseJump(Code.ge, 0);
+			doCompareRelop();
+		} else if (condFactRelop.getRelop() instanceof RelopLess) {
+			Code.putFalseJump(Code.lt, 0);
+			doCompareRelop();
+		} else if (condFactRelop.getRelop() instanceof RelopLessEq) {
+			Code.putFalseJump(Code.le, 0);
+			doCompareRelop();
+		}
+	}
+	
+//****************************************************************************************************************
 // Statement
 //****************************************************************************************************************	
 	

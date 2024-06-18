@@ -384,6 +384,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 			return;
 		}
 		error_report("Expression in condition is not boolean", condFact);
+		condFact.struct = Tab.noType;
 	}
 	
 //****************************************************************************************************************
