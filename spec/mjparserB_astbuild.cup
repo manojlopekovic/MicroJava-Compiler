@@ -128,6 +128,9 @@ nonterminal ExprList ExprList;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj MethodCallName;
 nonterminal ForStart ForStart;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct ConditionListComp;
+nonterminal ElseSym ElseSym;
+nonterminal EmptyState EmptyState;
+nonterminal IfSym IfSym;
 /* nonterminal DesignatorComma; */
 
 
@@ -288,7 +291,7 @@ Matched					::= (StmtDesignatorStmt)			DesignatorStatement:des SEMI {: RESULT=ne
 							|
 							(StmtRet)						RETURN ExprEpsilon:expr SEMI {: RESULT=new StmtRet(expr); RESULT.setLine(exprleft); :}
 							|
-							(StmtMatched)					IF LPAREN Condition:cond Matched:match ELSE Matched:unmatch {: RESULT=new StmtMatched(cond, match, unmatch); RESULT.setLine(condleft); :}
+							(StmtMatched)					IfSym:I1 LPAREN Condition:cond Matched:match ElseSym:E2 Matched:unmatch {: RESULT=new StmtMatched(I1, cond, match, E2, unmatch); RESULT.setLine(I1left); :}
 							|
 							(StmtBreak) 					BREAK SEMI {: RESULT=new StmtBreak(); :}
 							|
@@ -299,12 +302,21 @@ Matched					::= (StmtDesignatorStmt)			DesignatorStatement:des SEMI {: RESULT=ne
 							(StmtStmt)						LBRACE StatementList:S1 RBRACE {: RESULT=new StmtStmt(S1); RESULT.setLine(S1left); :}
 							;
 							
+IfSym					::= (IfSym)							IF {: RESULT=new IfSym(); :}
+							;
+
+ElseSym					::= (ElseSym)						ELSE {: RESULT=new ElseSym(); :}
+							;
+	
 ForStart				::= (ForStart)						FOR {: RESULT=new ForStart(); :}
 							;							
+							
+EmptyState				::= (EmptyState) {: RESULT=new EmptyState(); :}					/* epsilon */
+							;
 
-Unmatched				::= (UnmatchedIf)					IF LPAREN Condition:cond Statement:stmt {: RESULT=new UnmatchedIf(cond, stmt); RESULT.setLine(condleft); :}
+Unmatched				::= (UnmatchedIf)					IfSym:I1 LPAREN Condition:cond Statement:stmt EmptyState:E2 {: RESULT=new UnmatchedIf(I1, cond, stmt, E2); RESULT.setLine(I1left); :}
 							|
-							(UnmatchedIfElse)				IF LPAREN Condition:cond Matched:match ELSE Unmatched:unmatch {: RESULT=new UnmatchedIfElse(cond, match, unmatch); RESULT.setLine(condleft); :}				
+							(UnmatchedIfElse)				IfSym:I1 LPAREN Condition:cond Matched:match ElseSym:E2 Unmatched:unmatch {: RESULT=new UnmatchedIfElse(I1, cond, match, E2, unmatch); RESULT.setLine(I1left); :}				
 							;
 
 Condition				::= (ConditionNoErr)				CondTerm:ct OrCondTerm:O1 RPAREN {: RESULT=new ConditionNoErr(ct, O1); RESULT.setLine(ctleft); :}

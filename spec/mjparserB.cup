@@ -117,6 +117,7 @@ nonterminal ExprList;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj MethodCallName;
 nonterminal ForStart;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct ConditionListComp;
+nonterminal ElseSym, EmptyState, IfSym;
 /* nonterminal DesignatorComma; */
 
 
@@ -277,7 +278,7 @@ Matched					::= (StmtDesignatorStmt)			DesignatorStatement:des SEMI
 							|
 							(StmtRet)						RETURN ExprEpsilon:expr SEMI
 							|
-							(StmtMatched)					IF LPAREN Condition:cond Matched:match ELSE Matched:unmatch
+							(StmtMatched)					IfSym LPAREN Condition:cond Matched:match ElseSym Matched:unmatch
 							|
 							(StmtBreak) 					BREAK SEMI
 							|
@@ -288,12 +289,21 @@ Matched					::= (StmtDesignatorStmt)			DesignatorStatement:des SEMI
 							(StmtStmt)						LBRACE StatementList RBRACE
 							;
 							
+IfSym					::= (IfSym)							IF
+							;
+
+ElseSym					::= (ElseSym)						ELSE
+							;
+	
 ForStart				::= (ForStart)						FOR
 							;							
+							
+EmptyState				::= (EmptyState)					/* epsilon */
+							;
 
-Unmatched				::= (UnmatchedIf)					IF LPAREN Condition:cond Statement:stmt
+Unmatched				::= (UnmatchedIf)					IfSym LPAREN Condition:cond Statement:stmt EmptyState
 							|
-							(UnmatchedIfElse)				IF LPAREN Condition:cond Matched:match ELSE Unmatched:unmatch				
+							(UnmatchedIfElse)				IfSym LPAREN Condition:cond Matched:match ElseSym Unmatched:unmatch				
 							;
 
 Condition				::= (ConditionNoErr)				CondTerm:ct OrCondTerm RPAREN

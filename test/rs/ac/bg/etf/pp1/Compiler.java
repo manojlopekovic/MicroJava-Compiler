@@ -39,8 +39,6 @@ public class Compiler {
 			br = new BufferedReader(new FileReader(sourceCode));
 			Yylex lexer = new Yylex(br);
 			
-			
-			
 			MJParser p = new MJParser(lexer);
 	        Symbol s = p.parse();  // Start of parsing
 	        

@@ -29,6 +29,58 @@ public class CodeGen extends VisitorAdaptor{
 // Conditions
 //****************************************************************************************************************		
 	
+	private int fix_pc;
+	private int end_pc;
+	private Stack<Integer> endPcStack = new Stack<>();
+	private Stack<Integer> fixPcStack = new Stack<>();
+	
+	@Override
+	public void visit(ConditionNoErr condition) {
+//		When we arrive here, on stack we will have one value, 0 - false, 1 - true
+//		Condition is only called after if, so if 1 on stack - continue flow, if 0 on stack - jump
+		Code.loadConst(1);
+		Code.putFalseJump(Code.eq, 0);
+		fixPcStack.push(Code.pc - 2);
+	}
+	
+	@Override
+	public void visit(ElseSym elseSym) {
+		Code.putJump(0);
+		endPcStack.push(Code.pc - 2);
+		if(!fixPcStack.empty())
+			Code.fixup(fixPcStack.pop());
+	}
+	
+	@Override
+	public void visit(IfSym ifSym) {
+		if(!fixPcStack.empty())
+			fixPcStack.push(fixPcStack.peek());
+	}
+	
+	@Override
+	public void visit(EmptyState emptyState) {
+		Code.putJump(0);
+		endPcStack.push(Code.pc - 2);
+		if(!fixPcStack.empty())
+			Code.fixup(fixPcStack.pop());
+	}
+	
+	@Override
+	public void visit(StmtMatched stmtMatched) {
+		Code.fixup(endPcStack.pop());
+	}
+	
+	@Override
+	public void visit(UnmatchedIf stmtUnmatchedIf) {
+		Code.fixup(endPcStack.pop());
+	}
+	
+	@Override
+	public void visit(UnmatchedIfElse stmtUnmatchedIfElse) {
+		Code.fixup(endPcStack.pop());
+	}
+	
+	
 	private void doCompareRelop() {
 		int fix1_pc = Code.pc - 2;
 		Code.loadConst(1);
