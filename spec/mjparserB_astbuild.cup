@@ -125,8 +125,9 @@ nonterminal DesStmtList DesStmtList;
 nonterminal DesStmtMul DesStmtMul;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct OrCondTerm, AndCondFact, CondFactMay;
 nonterminal ExprList ExprList;
-nonterminal IfCond IfCond;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj MethodCallName;
+nonterminal ForStart ForStart;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct ConditionListComp;
 /* nonterminal DesignatorComma; */
 
 
@@ -293,10 +294,13 @@ Matched					::= (StmtDesignatorStmt)			DesignatorStatement:des SEMI {: RESULT=ne
 							|
 							(StmtContinue)					CONTINUE SEMI {: RESULT=new StmtContinue(); :}
 							|
-							(StmtFor)						FOR LPAREN ForDecl:F1 RPAREN Matched:M2 {: RESULT=new StmtFor(F1, M2); RESULT.setLine(F1left); :}
+							(StmtFor)						ForStart:F1 LPAREN ForDecl:F2 RPAREN Matched:M3 {: RESULT=new StmtFor(F1, F2, M3); RESULT.setLine(F1left); :}
 							|
 							(StmtStmt)						LBRACE StatementList:S1 RBRACE {: RESULT=new StmtStmt(S1); RESULT.setLine(S1left); :}
 							;
+							
+ForStart				::= (ForStart)						FOR {: RESULT=new ForStart(); :}
+							;							
 
 Unmatched				::= (UnmatchedIf)					IF LPAREN Condition:cond Statement:stmt {: RESULT=new UnmatchedIf(cond, stmt); RESULT.setLine(condleft); :}
 							|
@@ -359,19 +363,22 @@ DesignatorStatement		::= (DStmtDesAExpr)					Designator:des ASSIGN Expr:expr {: 
 							|
 							(DStmtDesMeth)					MethodCallName:M1 LPAREN ActPars:actPars RPAREN {: RESULT=new DStmtDesMeth(M1, actPars); RESULT.setLine(M1left); :}
 							|
-							(DStmtListComp)					Designator:des ASSIGN LBRACKET FOR Expr:expr IN Designator:desIn IfCond:I1 RBRACKET {: RESULT=new DStmtListComp(des, expr, desIn, I1); RESULT.setLine(desleft); :}
+							(DStmtListComp)					Designator:des ASSIGN LBRACKET FOR Expr:expr IN Designator:desIn RBRACKET {: RESULT=new DStmtListComp(des, expr, desIn); RESULT.setLine(desleft); :}
+							|
+							(DStmtListCompIf)				Designator:des ASSIGN LBRACKET FOR Expr:expr IN Designator:desIn IF ConditionListComp:C1 {: RESULT=new DStmtListCompIf(des, expr, desIn, C1); RESULT.setLine(desleft); :} 
 							/*
 							|
 							(DStmtArrayUnpack)				LBRACKET DesignatorComma MUL Designator RBRACKET ASSIGN Designator
 							*/
 							;
 							
-MethodCallName			::= (MethodCallName)				Designator:des {: RESULT=new MethodCallName(des); RESULT.setLine(desleft); :}
-							;
-
-IfCond					::= (IfCondIf)						IF Condition:cond {: RESULT=new IfCondIf(cond); RESULT.setLine(condleft); :}
+ConditionListComp		::= (ConditionListCompNoErr)		CondTerm:ct OrCondTerm:O1 RBRACKET {: RESULT=new ConditionListCompNoErr(ct, O1); RESULT.setLine(ctleft); :}
 							|
-							(IfCondEpsilon) {: RESULT=new IfCondEpsilon(); :}					/* epsilon */
+							(ConditionListCompErr)			error:e RBRACKET
+							{: parser.report_error("Handling error in if condition till BRACKET in line " + eleft, null);  :} {: RESULT=new ConditionListCompErr(); :}
+							;
+									
+MethodCallName			::= (MethodCallName)				Designator:des {: RESULT=new MethodCallName(des); RESULT.setLine(desleft); :}
 							;
 
 ActPars					::= (ActParsExpr)					Expr:expr ExprList:exprList {: RESULT=new ActParsExpr(expr, exprList); RESULT.setLine(exprleft); :}

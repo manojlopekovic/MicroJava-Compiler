@@ -114,8 +114,9 @@ nonterminal Matched, Unmatched;
 nonterminal ForDecl, DesStmtList, DesStmtMul;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct OrCondTerm, AndCondFact, CondFactMay;
 nonterminal ExprList;
-nonterminal IfCond;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj MethodCallName;
+nonterminal ForStart;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct ConditionListComp;
 /* nonterminal DesignatorComma; */
 
 
@@ -282,10 +283,13 @@ Matched					::= (StmtDesignatorStmt)			DesignatorStatement:des SEMI
 							|
 							(StmtContinue)					CONTINUE SEMI
 							|
-							(StmtFor)						FOR LPAREN ForDecl RPAREN Matched
+							(StmtFor)						ForStart LPAREN ForDecl RPAREN Matched
 							|
 							(StmtStmt)						LBRACE StatementList RBRACE
 							;
+							
+ForStart				::= (ForStart)						FOR
+							;							
 
 Unmatched				::= (UnmatchedIf)					IF LPAREN Condition:cond Statement:stmt
 							|
@@ -348,19 +352,22 @@ DesignatorStatement		::= (DStmtDesAExpr)					Designator:des ASSIGN Expr:expr
 							|
 							(DStmtDesMeth)					MethodCallName LPAREN ActPars:actPars RPAREN
 							|
-							(DStmtListComp)					Designator:des ASSIGN LBRACKET FOR Expr:expr IN Designator:desIn IfCond RBRACKET
+							(DStmtListComp)					Designator:des ASSIGN LBRACKET FOR Expr:expr IN Designator:desIn RBRACKET
+							|
+							(DStmtListCompIf)				Designator:des ASSIGN LBRACKET FOR Expr:expr IN Designator:desIn IF ConditionListComp 
 							/*
 							|
 							(DStmtArrayUnpack)				LBRACKET DesignatorComma MUL Designator RBRACKET ASSIGN Designator
 							*/
 							;
 							
-MethodCallName			::= (MethodCallName)				Designator:des
-							;
-
-IfCond					::= (IfCondIf)						IF Condition:cond
+ConditionListComp		::= (ConditionListCompNoErr)		CondTerm:ct OrCondTerm RBRACKET
 							|
-							(IfCondEpsilon)					/* epsilon */
+							(ConditionListCompErr)			error:e RBRACKET
+							{: parser.report_error("Handling error in if condition till BRACKET in line " + eleft, null);  :}
+							;
+									
+MethodCallName			::= (MethodCallName)				Designator:des
 							;
 
 ActPars					::= (ActParsExpr)					Expr:expr ExprList:exprList

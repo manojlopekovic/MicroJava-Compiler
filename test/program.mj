@@ -1,59 +1,19 @@
 program Test
 {
 
-	int methInt(int a, int b, int c, int d[])
-	{
-		b = d[1] + c;
-	
-		return a;
-	}
-	
-	bool methBool(bool p1){
+	int sum(int x, int y){
 		
-		return p1;
-	}
-	
-	char methChar(){
-	
-		return 'a';
-	}
-	
-	void methVoid(){
-	
-		return;
-	}
-	
-	int methodCalc(int b, int c, bool add){
-		if(add == true){
-			return b + c;
-		} else {
-			return b - c;
-		}
+		return x + y;
 	}
 
 	void main()
-	int x, y, z, arr[];
-	bool ba, bb;
-	char ca, cb;
+	int niz1[], niz2[];
+	int a, b;
+	char c, carr[];
 	{
-		if(1 == 1){
-			ba = methBool(true);
-			
-		} else if('a' == 'b') {
-			x = y;
-			
-		} else if(true == true){
-			arr[1] = x;
-			
-		} else {
-			ca = cb;
-		}
-		
-		x = methInt(x, z, y, arr);
-		methBool(true);
-		
-		y = methodCalc(z, x, true);
-		
+		niz1 = [for sum(a,a) in niz2];
+		niz1 = [for (a + a) in niz2];
+		niz1 = [for a*2 in niz2 if sum(a, a) < 5];
 	}
 	
 

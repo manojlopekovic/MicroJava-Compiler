@@ -35,12 +35,266 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	private int nVars;
 	private Obj calledMethod = Tab.noObj;
 	private Stack<Obj> methodStack = new Stack<>(); 
+	private boolean forLoop = false;
+	private Stack<Boolean> forStack = new Stack<>();
 
 
 //****************************************************************************************************************
 //	Semantic pass code, context conditions
 //****************************************************************************************************************
 
+//****************************************************************************************************************
+//	For loop
+//****************************************************************************************************************	
+	
+	@Override
+	public void visit(ForStart forStart) {
+		if(forLoop)
+			forStack.push(forLoop);
+		forLoop = true;
+	}
+	
+	@Override
+	public void visit(StmtFor stmtFor) {
+		if(forStack.empty())
+			forLoop = false;
+		else 
+			forLoop = forStack.pop();
+	}
+	
+	@Override
+	public void visit(StmtBreak bStmtBreak) {
+		if(!forLoop) {
+			error_report("Break found outside of for loop", bStmtBreak);
+		}
+	}
+	
+	@Override
+	public void visit(StmtContinue cStmtContinue) {
+		if(!forLoop) {
+			error_report("Continue found outside of for loop", cStmtContinue);
+		}
+	}
+	
+	private List<Obj> exprHasDesObj(Expr expr) {
+		List<Obj> list = new ArrayList<>(); 
+		List<Obj> termList = termHasDesObj(expr.getTerm());
+		list.addAll(termList);
+		if(expr.getAddTerm() instanceof AddTermTerm) {
+			List<Obj> addTermList = addTermHasDesObj((AddTermTerm) expr.getAddTerm()); 
+			list.addAll(addTermList);
+		}
+		return list;
+	}
+	
+	private List<Obj> addTermHasDesObj(AddTermTerm term) {
+		List<Obj> list = new ArrayList<>(); 
+		List<Obj> termList = termHasDesObj(term.getTerm());
+		list.addAll(termList);
+		if(term.getAddTerm() instanceof AddTermTerm) {
+			List<Obj> addTermList = addTermHasDesObj((AddTermTerm) term.getAddTerm()); 
+			list.addAll(addTermList);
+		}
+		return list;
+	}
+	
+	private List<Obj> termHasDesObj(Term term) {
+		List<Obj> list = new ArrayList<>(); 
+		List<Obj> factList = factorHasDesObj(term.getFactor().getFactorOp());
+		list.addAll(factList);
+		if(term.getMulFactor() instanceof MulFactorFactor) {
+			List<Obj> mulfacList = mulFactHasDesObj((MulFactorFactor) term.getMulFactor());
+			list.addAll(mulfacList);
+		}
+		return list;
+	}
+	
+	private List<Obj> mulFactHasDesObj(MulFactorFactor term) {
+		List<Obj> list = new ArrayList<>(); 
+		List<Obj> factList = factorHasDesObj(term.getFactor().getFactorOp());
+		list.addAll(factList);
+		if(term.getMulFactor() instanceof MulFactorFactor) {
+			List<Obj> mulfacList = mulFactHasDesObj((MulFactorFactor) term.getMulFactor());
+			list.addAll(mulfacList);
+		}
+		return list;
+	}
+	
+	private List<Obj> exprListHasDesObj(ExprListExpr expr) {
+		List<Obj> list = new ArrayList<>(); 
+		List<Obj> exprList = exprHasDesObj(expr.getExpr());
+		list.addAll(exprList);
+		if(expr.getExprList() instanceof ExprListExpr) {
+			exprList = exprListHasDesObj((ExprListExpr) expr.getExprList());
+			list.addAll(exprList);
+		}
+		return list;
+	}
+	
+	private List<Obj> actParsHasDesObj(ActParsExpr actParsExpr) {
+		List<Obj> list = new ArrayList<>(); 
+		List<Obj> exprList = exprHasDesObj(actParsExpr.getExpr());
+		list.addAll(exprList);
+		if(actParsExpr.getExprList() instanceof ExprListExpr) {
+			exprList = exprListHasDesObj((ExprListExpr) actParsExpr.getExprList());
+			list.addAll(exprList);
+		}
+		return list;
+	}
+	
+	private List<Obj> factorHasDesObj(FactorOp factorOp) {
+		List<Obj> list = new ArrayList<>(); 
+		if(factorOp instanceof FactorOpDesignator) {
+			FactorOpDesignator factorOpDesignator = (FactorOpDesignator) factorOp;
+			list.add(factorOpDesignator.getDesignator().obj);
+		} else if(factorOp instanceof FactorOpExpr) {
+			List<Obj> exprList = exprHasDesObj(((FactorOpExpr) factorOp).getExpr());
+			if(exprList != null)
+				list.addAll(exprList);
+		} else if(factorOp instanceof FactorOpMethCall) {
+			FactorOpMethCall factorOpMethCall = (FactorOpMethCall) factorOp;
+			if(factorOpMethCall.getActPars() instanceof ActParsExpr) {
+				List<Obj> parsList = actParsHasDesObj((ActParsExpr) factorOpMethCall.getActPars());
+				list.addAll(parsList);
+			}
+		}
+		return list;
+	}
+	
+	@Override
+	public void visit(DStmtListComp listComp) {
+		if(!listComp.getDesignator().obj.getType().equals(listComp.getDesignator1().obj.getType())) {
+			error_report("Tried to do comperhension for array of type: " + listComp.getDesignator().obj.getType().getElemType().getKind() 
+					+ " with array of type: " + listComp.getDesignator1().obj.getType().getElemType().getKind(), listComp);
+			return;	
+		}
+		if(!listComp.getExpr().struct.equals(listComp.getDesignator1().obj.getType().getElemType())) {
+			error_report("In list comperhension, expression type: " + listComp.getExpr().struct.getKind() + ", doesn't match designator type: " + 
+						listComp.getDesignator1().obj.getType().getElemType().getKind(), listComp);
+			return;
+		}
+//		Now, i have to count number of variables in expr, and it cannot be more than 1
+		List<Obj> objList = exprHasDesObj(listComp.getExpr());
+		boolean multipleObj = false;
+		Obj firstObj = objList.get(0);
+		for (Obj obj : objList) {
+			if(!obj.equals(firstObj)) {
+				multipleObj = true;
+				break;
+			}
+		}
+		if(multipleObj) {
+			error_report("Multiple variables declared in expression inside list comperhension", listComp);
+			return;
+		}
+	}
+	
+	private List<Obj> condHasDesObj(ConditionListCompNoErr cond){
+		List<Obj> list = new ArrayList<>(); 
+		list.addAll(condTermHasDesObj(cond.getCondTerm()));
+		if(cond.getOrCondTerm() instanceof OrCondTermOr) {
+			list.addAll(orCondTermHasDesObj((OrCondTermOr) cond.getOrCondTerm()));
+		}
+		return list;
+	}
+	
+	private List<Obj> orCondTermHasDesObj(OrCondTermOr orCondTerm) {
+		List<Obj> list = new ArrayList<>(); 
+		list.addAll(condTermHasDesObj(orCondTerm.getCondTerm()));
+		if(orCondTerm.getOrCondTerm() instanceof OrCondTermOr) {
+			list.addAll(orCondTermHasDesObj((OrCondTermOr) orCondTerm.getOrCondTerm()));
+		}
+		return list;
+	}
+	
+	private List<Obj> condTermHasDesObj(CondTerm condTerm) {
+		List<Obj> list = new ArrayList<>(); 
+		list.addAll(condfactorHasDesObj(condTerm.getCondFact()));
+		if(condTerm.getAndCondFact() instanceof AndCondFactAnd) {
+			list.addAll(andCondFactHasDesObj((AndCondFactAnd) condTerm.getAndCondFact()));
+		}
+		return list;
+	}
+	
+	private List<Obj> andCondFactHasDesObj(AndCondFactAnd andCondFactAnd) {
+		List<Obj> list = new ArrayList<>(); 
+		list.addAll(condfactorHasDesObj(andCondFactAnd.getCondFact()));
+		if(andCondFactAnd.getAndCondFact() instanceof AndCondFactAnd) {
+			list.addAll(andCondFactHasDesObj((AndCondFactAnd) andCondFactAnd.getAndCondFact()));
+		}
+		return list;
+	}
+	
+	private List<Obj> condfactorHasDesObj(CondFact condFact) {
+		List<Obj> list = new ArrayList<>(); 
+		if(condFact instanceof CondFactExpr) {
+			CondFactExpr condFactExpr = (CondFactExpr) condFact;
+			list.addAll(exprHasDesObj(condFactExpr.getExpr()));
+		} else {
+			CondFactRelop condFactRelop = (CondFactRelop) condFact;
+			list.addAll(exprHasDesObj(condFactRelop.getExpr()));
+			list.addAll(exprHasDesObj(condFactRelop.getExpr1()));
+		}		
+		return list;
+	}
+	
+	@Override
+	public void visit(DStmtListCompIf listCompIf) {
+		if(!listCompIf.getDesignator().obj.getType().equals(listCompIf.getDesignator1().obj.getType())) {
+			error_report("Tried to do comperhension for array of type: " + listCompIf.getDesignator().obj.getType().getElemType().getKind() 
+					+ " with array of type: " + listCompIf.getDesignator1().obj.getType().getElemType().getKind(), listCompIf);
+			return;	
+		}
+		if(!listCompIf.getExpr().struct.equals(listCompIf.getDesignator1().obj.getType().getElemType())) {
+			error_report("In list comperhension, expression type: " + listCompIf.getExpr().struct.getKind() + ", doesn't match designator type: " + 
+					listCompIf.getDesignator1().obj.getType().getElemType().getKind(), listCompIf);
+			return;
+		}
+//		Now, i have to count number of variables in expr, and it cannot be more than 1
+		List<Obj> objList = exprHasDesObj(listCompIf.getExpr());
+		boolean multipleObj = false;
+		Obj firstObj = objList.get(0);
+		for (Obj obj : objList) {
+			if(!obj.equals(firstObj)) {
+				multipleObj = true;
+				break;
+			}
+		}
+		if(multipleObj) {
+			error_report("Multiple variables declared in expression inside list comperhension", listCompIf);
+			return;
+		}
+//		Then, i have to check for the same variable in condition, if it's there
+		if(listCompIf.getConditionListComp() instanceof ConditionListCompNoErr) {
+			ConditionListCompNoErr compNoErr = (ConditionListCompNoErr) listCompIf.getConditionListComp();
+			List<Obj> condObjList = condHasDesObj(compNoErr); 
+			multipleObj = false;
+			for (Obj obj : condObjList) {
+				if(!obj.equals(firstObj)) {
+					multipleObj = true;
+					break;
+				}
+			}
+			if(multipleObj) {
+				error_report("There are multiple variables declared in condition inside list comperhension", listCompIf);
+				return;
+			}
+		}
+	}
+	
+	@Override
+	public void visit(ConditionListCompNoErr condition) {
+		if(condition.getOrCondTerm() instanceof OrCondTermOr) {
+			OrCondTermOr orCondTermOr = (OrCondTermOr) condition.getOrCondTerm();
+			if(!condition.getOrCondTerm().struct.compatibleWith(boolType)) {
+				error_report("Expressions are not compatible in condition[ " + condition.getOrCondTerm().struct.getKind() + ", " + boolType.getKind() + " ]" , condition);
+				condition.struct = noType;
+				return;
+			}
+		}
+		condition.struct = boolType;
+	}
+	
 //****************************************************************************************************************
 //	If, Else, Conditions
 //****************************************************************************************************************	
@@ -56,7 +310,6 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 			}
 		}
 		condition.struct = boolType;
-		
 	}
 	
 	@Override
