@@ -163,34 +163,36 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	
 	@Override
 	public void visit(DStmtListComp listComp) {
-		if(listComp.getDesignator().obj.getType().getKind() != listComp.getDesignator1().obj.getType().getKind()){
+		if(listComp.getDesignator().obj.getType().getKind() != listComp.getListCompDes().getDesignator().obj.getType().getKind()){
 			error_report("Kinds in list comperhension are: " + listComp.getDesignator().obj.getType().getKind()
-					+ " and: " + listComp.getDesignator1().obj.getType().getKind(), listComp);
+					+ " and: " + listComp.getListCompDes().getDesignator().obj.getType().getKind(), listComp);
 			return;
 		}
-		if(!listComp.getDesignator().obj.getType().equals(listComp.getDesignator1().obj.getType())) {
+		if(!listComp.getDesignator().obj.getType().equals(listComp.getListCompDes().getDesignator().obj.getType())) {
 			error_report("Tried to do comperhension for array of type: " + listComp.getDesignator().obj.getType().getElemType().getKind() 
-					+ " with array of type: " + listComp.getDesignator1().obj.getType().getElemType().getKind(), listComp);
+					+ " with array of type: " + listComp.getListCompDes().getDesignator().obj.getType().getElemType().getKind(), listComp);
 			return;	
 		}
-		if(!listComp.getExpr().struct.equals(listComp.getDesignator1().obj.getType().getElemType())) {
-			error_report("In list comperhension, expression type: " + listComp.getExpr().struct.getKind() + ", doesn't match designator type: " + 
-						listComp.getDesignator1().obj.getType().getElemType().getKind(), listComp);
+		if(!listComp.getListCompExpr().getExpr().struct.equals(listComp.getListCompDes().getDesignator().obj.getType().getElemType())) {
+			error_report("In list comperhension, expression type: " + listComp.getListCompExpr().getExpr().struct.getKind() + ", doesn't match designator type: " + 
+						listComp.getListCompDes().getDesignator().obj.getType().getElemType().getKind(), listComp);
 			return;
 		}
 //		Now, i have to count number of variables in expr, and it cannot be more than 1
-		List<Obj> objList = exprHasDesObj(listComp.getExpr());
-		boolean multipleObj = false;
-		Obj firstObj = objList.get(0);
-		for (Obj obj : objList) {
-			if(!obj.equals(firstObj)) {
-				multipleObj = true;
-				break;
+		List<Obj> objList = exprHasDesObj(listComp.getListCompExpr().getExpr());
+		if(!objList.isEmpty()) {
+			boolean multipleObj = false;
+			Obj firstObj = objList.get(0);
+			for (Obj obj : objList) {
+				if(!obj.equals(firstObj)) {
+					multipleObj = true;
+					break;
+				}
 			}
-		}
-		if(multipleObj) {
-			error_report("Multiple variables declared in expression inside list comperhension", listComp);
-			return;
+			if(multipleObj) {
+				error_report("Multiple variables declared in expression inside list comperhension", listComp);
+				return;
+			}
 		}
 	}
 	
@@ -246,49 +248,55 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	
 	@Override
 	public void visit(DStmtListCompIf listCompIf) {
-		if(listCompIf.getDesignator().obj.getType().getKind() != listCompIf.getDesignator1().obj.getType().getKind()){
+		if(listCompIf.getDesignator().obj.getType().getKind() != listCompIf.getListCompDes().getDesignator().obj.getType().getKind()){
 			error_report("Kinds in list comperhension are: " + listCompIf.getDesignator().obj.getType().getKind()
-					+ " and: " + listCompIf.getDesignator1().obj.getType().getKind(), listCompIf);
+					+ " and: " + listCompIf.getListCompDes().getDesignator().obj.getType().getKind(), listCompIf);
 			return;
 		}
-		if(!listCompIf.getDesignator().obj.getType().equals(listCompIf.getDesignator1().obj.getType())) {
+		if(!listCompIf.getDesignator().obj.getType().equals(listCompIf.getListCompDes().getDesignator().obj.getType())) {
 			error_report("Tried to do comperhension for array of type: " + listCompIf.getDesignator().obj.getType().getElemType().getKind() 
-					+ " with array of type: " + listCompIf.getDesignator1().obj.getType().getElemType().getKind(), listCompIf);
+					+ " with array of type: " + listCompIf.getListCompDes().getDesignator().obj.getType().getElemType().getKind(), listCompIf);
 			return;	
 		}
-		if(!listCompIf.getExpr().struct.equals(listCompIf.getDesignator1().obj.getType().getElemType())) {
-			error_report("In list comperhension, expression type: " + listCompIf.getExpr().struct.getKind() + ", doesn't match designator type: " + 
-					listCompIf.getDesignator1().obj.getType().getElemType().getKind(), listCompIf);
+		if(!listCompIf.getListCompExpr().getExpr().struct.equals(listCompIf.getListCompDes().getDesignator().obj.getType().getElemType())) {
+			error_report("In list comperhension, expression type: " + listCompIf.getListCompExpr().getExpr().struct.getKind() + ", doesn't match designator type: " + 
+					listCompIf.getListCompDes().getDesignator().obj.getType().getElemType().getKind(), listCompIf);
 			return;
 		}
 //		Now, i have to count number of variables in expr, and it cannot be more than 1
-		List<Obj> objList = exprHasDesObj(listCompIf.getExpr());
+		List<Obj> objList = exprHasDesObj(listCompIf.getListCompExpr().getExpr());
 		boolean multipleObj = false;
-		Obj firstObj = objList.get(0);
-		for (Obj obj : objList) {
-			if(!obj.equals(firstObj)) {
-				multipleObj = true;
-				break;
-			}
-		}
-		if(multipleObj) {
-			error_report("Multiple variables declared in expression inside list comperhension", listCompIf);
-			return;
-		}
-//		Then, i have to check for the same variable in condition, if it's there
-		if(listCompIf.getConditionListComp() instanceof ConditionListCompNoErr) {
-			ConditionListCompNoErr compNoErr = (ConditionListCompNoErr) listCompIf.getConditionListComp();
-			List<Obj> condObjList = condHasDesObj(compNoErr); 
-			multipleObj = false;
-			for (Obj obj : condObjList) {
+		Obj firstObj = null;
+		if(!objList.isEmpty()) {
+			firstObj = objList.get(0);
+			for (Obj obj : objList) {
 				if(!obj.equals(firstObj)) {
 					multipleObj = true;
 					break;
 				}
 			}
 			if(multipleObj) {
-				error_report("There are multiple variables declared in condition inside list comperhension", listCompIf);
+				error_report("Multiple variables declared in expression inside list comperhension", listCompIf);
 				return;
+			}
+		}
+//		Then, i have to check for the same variable in condition, if it's there
+		if(listCompIf.getConditionListComp() instanceof ConditionListCompNoErr) {
+			ConditionListCompNoErr compNoErr = (ConditionListCompNoErr) listCompIf.getConditionListComp();
+			List<Obj> condObjList = condHasDesObj(compNoErr); 
+			if(!condObjList.isEmpty()) {
+				multipleObj = false;
+				Obj condObj = condObjList.get(0);
+				for (Obj obj : condObjList) {
+					if(!obj.equals(condObj)) {
+						multipleObj = true;
+						break;
+					}
+				}
+				if(multipleObj || (firstObj != null && !firstObj.equals(multipleObj))) {
+					error_report("There are multiple variables declared in condition inside list comperhension", listCompIf);
+					return;
+				}
 			}
 		}
 	}

@@ -119,6 +119,7 @@ nonterminal ForStart;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct ConditionListComp;
 nonterminal ElseSym, EmptyState, IfSym;
 nonterminal FirstSemiSym, SecondSemiSym, ForRparenSym, ForEmptyState;
+nonterminal ListCompFor, ListCompIn, ListCompExpr, ListCompDes, ListCompEpsilon;
 /* nonterminal DesignatorComma; */
 
 
@@ -379,13 +380,28 @@ DesignatorStatement		::= (DStmtDesAExpr)					Designator:des ASSIGN Expr:expr
 							|
 							(DStmtDesMeth)					MethodCallName LPAREN ActPars:actPars RPAREN
 							|
-							(DStmtListComp)					Designator:des ASSIGN LBRACKET FOR Expr:expr IN Designator:desIn RBRACKET
+							(DStmtListComp)					Designator:des ASSIGN LBRACKET ListCompFor ListCompExpr ListCompIn ListCompDes RBRACKET
 							|
-							(DStmtListCompIf)				Designator:des ASSIGN LBRACKET FOR Expr:expr IN Designator:desIn IF ConditionListComp 
+							(DStmtListCompIf)				Designator:des ASSIGN LBRACKET ListCompFor ListCompExpr ListCompIn ListCompDes IF ConditionListComp 
 							/*
 							|
 							(DStmtArrayUnpack)				LBRACKET DesignatorComma MUL Designator RBRACKET ASSIGN Designator
 							*/
+							;
+							
+ListCompEpsilon			::= (ListCompEpsilon)				/* epsilon */
+							;
+							
+ListCompDes				::= (ListCompDes)					Designator:desIn
+							;
+							
+ListCompExpr			::= (ListCompExpr)					Expr:expr
+							;
+
+ListCompFor				::= (ListCompFor)					FOR
+							;
+							
+ListCompIn				::= (ListCompIn)					IN
 							;
 							
 ConditionListComp		::= (ConditionListCompNoErr)		CondTerm:ct OrCondTerm RBRACKET

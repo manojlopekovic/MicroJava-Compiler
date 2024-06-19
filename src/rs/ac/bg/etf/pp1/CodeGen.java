@@ -388,6 +388,98 @@ public class CodeGen extends VisitorAdaptor{
 //			Code.loadConst(32);
 //		}
 	}
+
+//****************************************************************************************************************
+//	List comperhension
+//****************************************************************************************************************		
+	
+	private int exitAddr;
+	private Obj exprObj;
+	private int exprAddr = -1;
+	private boolean firstIterationPassed = false;
+	private Struct boolType = Tab.find("bool").getType();
+	private Obj fpObj = new Obj(Obj.Var, "fpobj", boolType);
+	private int index = 0;
+	
+	@Override
+	public void visit(ListCompFor listCompFor) {
+		Code.loadConst(0);
+		Code.store(fpObj);
+		exprAddr = Code.pc;
+	}
+	
+	@Override
+	public void visit(ListCompIn listCompIn) {
+		Code.load(fpObj);
+		Code.loadConst(1);
+		Code.putFalseJump(Code.eq, 0);
+		int elseAddr = Code.pc - 2;
+		if(listCompIn.getParent() instanceof DStmtListComp) {
+			DStmtListComp dStmtListComp = (DStmtListComp)listCompIn.getParent();
+			Code.put(Code.dup2);
+			Code.load(dStmtListComp.getDesignator().obj);
+			Code.put(Code.dup_x2);
+			Code.put(Code.pop);
+//			Code.load(((FactorOpDesignator)(dStmtListComp.getListCompExpr().getExpr().getTerm().getFactor().getFactorOp())).getDesignator().obj);
+			Code.put(Code.astore);
+		} else if(listCompIn.getParent() instanceof DStmtListCompIf) {
+			DStmtListCompIf dStmtListComp = (DStmtListCompIf)listCompIn.getParent();
+			Code.put(Code.dup2);
+			Code.load(dStmtListComp.getDesignator().obj);
+			Code.put(Code.dup_x2);
+			Code.put(Code.pop);
+//			Code.load(((FactorOpDesignator)(dStmtListComp.getListCompExpr().getExpr().getTerm().getFactor().getFactorOp())).getDesignator().obj);
+			Code.put(Code.astore);
+		}
+		Code.put(Code.pop);
+		Code.loadConst(1);
+		Code.put(Code.add);
+		Code.putJump(0);
+		int exAddr = Code.pc - 2;
+		Code.fixup(elseAddr);
+		Code.put(Code.pop);
+		Code.loadConst(0);
+		Code.fixup(exAddr);
+	}
+	
+	@Override
+	public void visit(ListCompEpsilon listCompEpsilon) {
+//		Code.fixup(arrAddr);
+	}
+	
+	@Override
+	public void visit(ListCompExpr listCompExpr) {
+	}
+	
+	@Override
+	public void visit(ListCompDes listCompDes) {
+		Code.loadConst(1);
+		Code.store(fpObj);
+		Code.put(Code.dup);
+		Code.load(listCompDes.getDesignator().obj);
+		Code.put(Code.arraylength);
+		Code.putFalseJump(Code.lt, exitAddr);
+		exitAddr = Code.pc - 2;
+		Code.put(Code.dup);
+		Code.load(listCompDes.getDesignator().obj);
+		Code.put(Code.dup_x1);
+		Code.put(Code.pop);
+		Code.put(Code.aload);
+		if(listCompDes.getParent() instanceof DStmtListComp) {
+			DStmtListComp dStmtListComp = (DStmtListComp)listCompDes.getParent();
+//			Code.load(dStmtListComp.getDesignator().obj);
+			Code.store(((FactorOpDesignator)(dStmtListComp.getListCompExpr().getExpr().getTerm().getFactor().getFactorOp())).getDesignator().obj);
+		} else if(listCompDes.getParent() instanceof DStmtListCompIf) {
+			DStmtListCompIf dStmtListComp = (DStmtListCompIf)listCompDes.getParent();
+			Code.store(((FactorOpDesignator)(dStmtListComp.getListCompExpr().getExpr().getTerm().getFactor().getFactorOp())).getDesignator().obj);
+		}
+		Code.putJump(exprAddr);
+	}
+	
+	@Override
+	public void visit(DStmtListComp dStmtListComp) {
+		Code.fixup(exitAddr);
+	}
 	
 //****************************************************************************************************************
 //	Expr

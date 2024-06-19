@@ -135,6 +135,11 @@ nonterminal FirstSemiSym FirstSemiSym;
 nonterminal SecondSemiSym SecondSemiSym;
 nonterminal ForRparenSym ForRparenSym;
 nonterminal ForEmptyState ForEmptyState;
+nonterminal ListCompFor ListCompFor;
+nonterminal ListCompIn ListCompIn;
+nonterminal ListCompExpr ListCompExpr;
+nonterminal ListCompDes ListCompDes;
+nonterminal ListCompEpsilon ListCompEpsilon;
 /* nonterminal DesignatorComma; */
 
 
@@ -395,13 +400,28 @@ DesignatorStatement		::= (DStmtDesAExpr)					Designator:des ASSIGN Expr:expr {: 
 							|
 							(DStmtDesMeth)					MethodCallName:M1 LPAREN ActPars:actPars RPAREN {: RESULT=new DStmtDesMeth(M1, actPars); RESULT.setLine(M1left); :}
 							|
-							(DStmtListComp)					Designator:des ASSIGN LBRACKET FOR Expr:expr IN Designator:desIn RBRACKET {: RESULT=new DStmtListComp(des, expr, desIn); RESULT.setLine(desleft); :}
+							(DStmtListComp)					Designator:des ASSIGN LBRACKET ListCompFor:L1 ListCompExpr:L2 ListCompIn:L3 ListCompEpsilon:L4 ListCompDes:L5 RBRACKET {: RESULT=new DStmtListComp(des, L1, L2, L3, L4, L5); RESULT.setLine(desleft); :}
 							|
-							(DStmtListCompIf)				Designator:des ASSIGN LBRACKET FOR Expr:expr IN Designator:desIn IF ConditionListComp:C1 {: RESULT=new DStmtListCompIf(des, expr, desIn, C1); RESULT.setLine(desleft); :} 
+							(DStmtListCompIf)				Designator:des ASSIGN LBRACKET ListCompFor:L1 ListCompExpr:L2 ListCompIn:L3 ListCompEpsilon:L4 ListCompDes:L5 IF ConditionListComp:C6 {: RESULT=new DStmtListCompIf(des, L1, L2, L3, L4, L5, C6); RESULT.setLine(desleft); :} 
 							/*
 							|
 							(DStmtArrayUnpack)				LBRACKET DesignatorComma MUL Designator RBRACKET ASSIGN Designator
 							*/
+							;
+							
+ListCompEpsilon			::= (ListCompEpsilon) {: RESULT=new ListCompEpsilon(); :}				/* epsilon */
+							;
+							
+ListCompDes				::= (ListCompDes)					Designator:desIn {: RESULT=new ListCompDes(desIn); RESULT.setLine(desInleft); :}
+							;
+							
+ListCompExpr			::= (ListCompExpr)					Expr:expr {: RESULT=new ListCompExpr(expr); RESULT.setLine(exprleft); :}
+							;
+
+ListCompFor				::= (ListCompFor)					FOR {: RESULT=new ListCompFor(); :}
+							;
+							
+ListCompIn				::= (ListCompIn)					IN {: RESULT=new ListCompIn(); :}
 							;
 							
 ConditionListComp		::= (ConditionListCompNoErr)		CondTerm:ct OrCondTerm:O1 RBRACKET {: RESULT=new ConditionListCompNoErr(ct, O1); RESULT.setLine(ctleft); :}
