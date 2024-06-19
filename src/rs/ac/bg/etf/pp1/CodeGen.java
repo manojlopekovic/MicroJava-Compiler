@@ -376,6 +376,19 @@ public class CodeGen extends VisitorAdaptor{
 		Code.load(designatorArrName.obj);
 	}
 	
+	@Override
+	public void visit(DesignatorVar designatorVar) {
+		if(designatorVar.obj.getName().equals("eol")) {
+//			Sign for LF[LineFeed]
+			Code.loadConst(10);
+		} else if(designatorVar.obj.getName().equals("null")) {
+			Code.loadConst(0);
+		}
+//		else if(designatorVar.obj.getName().equals("space")) {
+//			Code.loadConst(32);
+//		}
+	}
+	
 //****************************************************************************************************************
 //	Expr
 //****************************************************************************************************************	
@@ -505,7 +518,7 @@ public class CodeGen extends VisitorAdaptor{
 	
 	
 //****************************************************************************************************************
-//		Standard methods
+//	Standard methods
 //****************************************************************************************************************
 		
 	private void put_enter(int b1, int b2) {
