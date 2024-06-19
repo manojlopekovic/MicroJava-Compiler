@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
+import javax.swing.plaf.basic.BasicTabbedPaneUI.TabbedPaneLayout;
+
 import java_cup.internal_error;
 import rs.ac.bg.etf.pp1.ast.*;
 import rs.etf.pp1.mj.runtime.Code;
@@ -393,49 +395,119 @@ public class CodeGen extends VisitorAdaptor{
 //	List comperhension
 //****************************************************************************************************************		
 	
+	private Obj exprHasObj(Expr expr) {
+		Obj obj = null;
+		obj = termHasObj(expr.getTerm());
+		if(obj == null)
+			if(expr.getAddTerm() instanceof AddTermTerm)
+				obj = addTermHasObj((AddTermTerm)expr.getAddTerm());
+		return obj;
+		
+	}
+	
+	private Obj addTermHasObj(AddTermTerm addTermTerm) {
+		Obj obj = null;
+		if(addTermTerm.getAddTerm() instanceof AddTermTerm)
+			obj = addTermHasObj((AddTermTerm)addTermTerm.getAddTerm());
+		if(obj == null)
+			obj = termHasObj(addTermTerm.getTerm());
+		return obj;
+	}
+	
+	private Obj termHasObj(Term term) {
+		Obj obj = null;
+		obj = factHasObj(term.getFactor());
+		if(obj == null)
+			if(term.getMulFactor() instanceof MulFactorFactor)
+				obj = mulFactHasObj((MulFactorFactor)term.getMulFactor());
+		return obj;
+	}
+	
+	private Obj mulFactHasObj(MulFactorFactor mulFactorFactor) {
+		Obj obj = null;
+		if(mulFactorFactor.getMulFactor() instanceof MulFactorFactor)
+			obj = mulFactHasObj((MulFactorFactor)mulFactorFactor.getMulFactor());
+		if(obj == null)
+			obj = factHasObj(mulFactorFactor.getFactor());
+		return obj;
+	}
+	
+	private Obj exprListHasObj(ExprListExpr exprListExpr) {
+		Obj obj = null;
+		if(exprListExpr.getExprList() instanceof ExprListExpr)
+			obj = exprListHasObj((ExprListExpr) exprListExpr.getExprList());
+		if(obj == null)
+			obj = exprHasObj(exprListExpr.getExpr());
+		return obj;
+	}
+	
+	private Obj actParsHasObj(ActParsExpr actParsExpr) {
+		Obj obj = null;
+		if(actParsExpr.getExprList() instanceof ExprListExpr)
+			obj = exprListHasObj((ExprListExpr) actParsExpr.getExprList());
+		if(obj == null)
+			obj = exprHasObj(actParsExpr.getExpr());
+		return obj;
+	}
+	
+	private Obj factHasObj(Factor fact) {
+		Obj obj = null;
+		if(fact.getFactorOp() instanceof FactorOpDesignator) {
+			obj = ((FactorOpDesignator)fact.getFactorOp()).getDesignator().obj;
+		} else if(fact.getFactorOp() instanceof FactorOpMethCall) {
+//			obj = ((FactorOpMethCall)fact.getFactorOp()).getMethodCallName().getDesignator().obj;
+//			obj = ((FactorOpMethCall)fact.getFactorOp()).get;
+			if(((FactorOpMethCall)fact.getFactorOp()).getMethodCallName().getDesignator().obj.getType() != Tab.noType) {
+				if(((FactorOpMethCall)fact.getFactorOp()).getActPars() instanceof ActParsExpr)
+					obj = actParsHasObj((ActParsExpr) ((FactorOpMethCall)fact.getFactorOp()).getActPars());
+			}
+		}
+		return obj;
+	}
+	
 	private int exitAddr;
-	private Obj exprObj;
 	private int exprAddr = -1;
-	private boolean firstIterationPassed = false;
 	private Struct boolType = Tab.find("bool").getType();
 	private Obj fpObj = new Obj(Obj.Var, "fpobj", boolType);
-	private int index = 0;
 	
 	@Override
 	public void visit(ListCompFor listCompFor) {
 		Code.loadConst(0);
 		Code.store(fpObj);
+		Code.load(((DStmtListComp)(listCompFor.getParent())).getDesignator().obj);
 		exprAddr = Code.pc;
 	}
 	
 	@Override
 	public void visit(ListCompIn listCompIn) {
+//		This is check if first iteration has passed so that index will be set | incremented
 		Code.load(fpObj);
 		Code.loadConst(1);
 		Code.putFalseJump(Code.eq, 0);
 		int elseAddr = Code.pc - 2;
+//		If it's not first iteration, code continues from here
 		if(listCompIn.getParent() instanceof DStmtListComp) {
-			DStmtListComp dStmtListComp = (DStmtListComp)listCompIn.getParent();
-			Code.put(Code.dup2);
-			Code.load(dStmtListComp.getDesignator().obj);
-			Code.put(Code.dup_x2);
-			Code.put(Code.pop);
+//			DStmtListComp dStmtListComp = (DStmtListComp)listCompIn.getParent();
+//			Code.put(Code.dup2);
+//			Code.load(desArrObj);
+//			Code.put(Code.dup_x2);
+//			Code.put(Code.pop);
 //			Code.load(((FactorOpDesignator)(dStmtListComp.getListCompExpr().getExpr().getTerm().getFactor().getFactorOp())).getDesignator().obj);
 			Code.put(Code.astore);
 		} else if(listCompIn.getParent() instanceof DStmtListCompIf) {
-			DStmtListCompIf dStmtListComp = (DStmtListCompIf)listCompIn.getParent();
-			Code.put(Code.dup2);
-			Code.load(dStmtListComp.getDesignator().obj);
-			Code.put(Code.dup_x2);
-			Code.put(Code.pop);
+//			DStmtListCompIf dStmtListComp = (DStmtListCompIf)listCompIn.getParent();
+//			Code.put(Code.dup2);
+//			Code.load(desArrObj);
+//			Code.put(Code.dup_x2);
+//			Code.put(Code.pop);
 //			Code.load(((FactorOpDesignator)(dStmtListComp.getListCompExpr().getExpr().getTerm().getFactor().getFactorOp())).getDesignator().obj);
 			Code.put(Code.astore);
 		}
-		Code.put(Code.pop);
 		Code.loadConst(1);
 		Code.put(Code.add);
 		Code.putJump(0);
 		int exAddr = Code.pc - 2;
+//		Jump to here if it is still first iteration
 		Code.fixup(elseAddr);
 		Code.put(Code.pop);
 		Code.loadConst(0);
@@ -444,7 +516,6 @@ public class CodeGen extends VisitorAdaptor{
 	
 	@Override
 	public void visit(ListCompEpsilon listCompEpsilon) {
-//		Code.fixup(arrAddr);
 	}
 	
 	@Override
@@ -458,7 +529,7 @@ public class CodeGen extends VisitorAdaptor{
 		Code.put(Code.dup);
 		Code.load(listCompDes.getDesignator().obj);
 		Code.put(Code.arraylength);
-		Code.putFalseJump(Code.lt, exitAddr);
+		Code.putFalseJump(Code.lt, 0);
 		exitAddr = Code.pc - 2;
 		Code.put(Code.dup);
 		Code.load(listCompDes.getDesignator().obj);
@@ -468,17 +539,28 @@ public class CodeGen extends VisitorAdaptor{
 		if(listCompDes.getParent() instanceof DStmtListComp) {
 			DStmtListComp dStmtListComp = (DStmtListComp)listCompDes.getParent();
 //			Code.load(dStmtListComp.getDesignator().obj);
-			Code.store(((FactorOpDesignator)(dStmtListComp.getListCompExpr().getExpr().getTerm().getFactor().getFactorOp())).getDesignator().obj);
+			Obj obj = exprHasObj(dStmtListComp.getListCompExpr().getExpr());
+			if(obj != null)
+				Code.store(obj);
+			else 
+				Code.put(Code.pop);
 		} else if(listCompDes.getParent() instanceof DStmtListCompIf) {
 			DStmtListCompIf dStmtListComp = (DStmtListCompIf)listCompDes.getParent();
-			Code.store(((FactorOpDesignator)(dStmtListComp.getListCompExpr().getExpr().getTerm().getFactor().getFactorOp())).getDesignator().obj);
+			Obj obj = exprHasObj(dStmtListComp.getListCompExpr().getExpr());
+			if(obj != null)
+				Code.store(obj);
+			else 
+				Code.put(Code.pop);
 		}
+		Code.put(Code.dup2);
 		Code.putJump(exprAddr);
 	}
 	
 	@Override
 	public void visit(DStmtListComp dStmtListComp) {
 		Code.fixup(exitAddr);
+		Code.put(Code.pop);
+		Code.store(dStmtListComp.getDesignator().obj);
 	}
 	
 //****************************************************************************************************************

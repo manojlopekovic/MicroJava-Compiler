@@ -380,7 +380,7 @@ DesignatorStatement		::= (DStmtDesAExpr)					Designator:des ASSIGN Expr:expr
 							|
 							(DStmtDesMeth)					MethodCallName LPAREN ActPars:actPars RPAREN
 							|
-							(DStmtListComp)					Designator:des ASSIGN LBRACKET ListCompFor ListCompExpr ListCompIn ListCompDes RBRACKET
+							(DStmtListComp)					Designator:des ASSIGN LBRACKET ListCompFor ListCompExpr ListCompIn ListCompDes RBRACKET ListCompEpsilon
 							|
 							(DStmtListCompIf)				Designator:des ASSIGN LBRACKET ListCompFor ListCompExpr ListCompIn ListCompDes IF ConditionListComp 
 							/*

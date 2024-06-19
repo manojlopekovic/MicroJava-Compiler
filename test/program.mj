@@ -1,16 +1,19 @@
 program test
 {
 	
+	int test1(int a, int a){
+		return a + a;
+	}
 
 	void main()
 	int niz1[], niz2[];
-	int a;
+	int a, b;
 	{
 		a = 5;
 		niz2 = range(5);
 		niz1 = new int[5];
 		
-		niz1 = [for a in niz2];
+		niz1 = [for a in niz2];	
 		
 		print(niz2);
 		print(eol);
