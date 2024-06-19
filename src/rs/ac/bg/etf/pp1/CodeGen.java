@@ -542,13 +542,6 @@ public class CodeGen extends VisitorAdaptor{
 		put_return();
 	}
 	
-//	@Override
-//	public void visit(FactorOpMethCall factorOpMethCall) {
-//		if(factorOpMethCall.getMethodCallName().getDesignator().obj.getName().equals("ord")) {
-//		} else if(factorOpMethCall.getMethodCallName().getDesignator().obj.getName().equals("chr")) {
-//		} else if(factorOpMethCall.getMethodCallName().getDesignator().obj.getName().equals("len")) {
-//		}
-//	}	
 
 		
 //****************************************************************************************************************
@@ -559,13 +552,42 @@ public class CodeGen extends VisitorAdaptor{
 	private Stack<Obj> methodStack = new Stack<>();
 	
 	@Override
+	public void visit(DStmtDesMeth dStmtDesMeth) {
+		if(methodStack.empty())
+			calledMethod = Tab.noObj;
+		else {
+			calledMethod = methodStack.pop();
+		}
+	}
+	
+	@Override
+	public void visit(FactorOpMethCall factorOpMethCall) {
+		if(methodStack.empty())
+			calledMethod = Tab.noObj;
+		else {
+			calledMethod = methodStack.pop();
+		}
+	}	
+	
+	@Override
 	public void visit(ActParsExpr actParsExpr) {
 		Collection<Obj> localsList =  calledMethod.getLocalSymbols();
-		Obj[] objArr = localsList.toArray(new Obj[0]);
-		for(int i = 0; i < localsList.size(); i++)
-			Code.store(objArr[i]);
-		for(int i = 0; i < localsList.size(); i++)
-			Code.load(objArr[i]);
+		ArrayList<Obj> objArr = new ArrayList<>();
+		for (Obj obj : localsList) {
+			if(obj.getFpPos() == 1)
+				objArr.add(obj);
+		}
+		for(int i = 0; i < objArr.size(); i++)
+			Code.store(objArr.get(i));
+		for(int i = 0; i < objArr.size(); i++)
+			Code.load(objArr.get(i));
+		int adr = calledMethod.getAdr();
+		Code.put(Code.call);
+		Code.put2(adr - (Code.pc - 1));
+	}
+	
+	@Override
+	public void visit(ActParsEpsilon actParsEpsilon) {
 		int adr = calledMethod.getAdr();
 		Code.put(Code.call);
 		Code.put2(adr - (Code.pc - 1));
