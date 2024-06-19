@@ -283,12 +283,30 @@ public class CodeGen extends VisitorAdaptor{
 				Code.put(Code.dup2);
 //				At this point stack is: |adr ind adr ind
 				
-				Code.put(Code.aload);
-				Code.loadConst(0);
-				if(stmtPrint.getExpr().struct.equals(Tab.charType))
+				if(stmtPrint.getExpr().struct.equals(Tab.charType)) {
+					Code.put(Code.baload);
+					Code.loadConst(0);
 					Code.put(Code.bprint);
-				else 
-					Code.put(Code.print);
+				} else {
+					if(stmtPrint.getExpr().getTerm().getFactor().getFactorOp() instanceof FactorOpDesignator) {
+						FactorOpDesignator factorOpDesignator = (FactorOpDesignator)stmtPrint.getExpr().getTerm().getFactor().getFactorOp();
+						if(factorOpDesignator.getDesignator().obj.getType().getKind() == Struct.Array 
+								&& factorOpDesignator.getDesignator().obj.getType().getElemType() == Tab.charType) {
+
+							Code.put(Code.baload);
+							Code.loadConst(0);
+							Code.put(Code.bprint);
+						} else {
+							Code.put(Code.aload);
+							Code.loadConst(0);
+							Code.put(Code.print);
+						}
+					} else {
+						Code.put(Code.aload);
+						Code.loadConst(0);
+						Code.put(Code.print);
+					}
+				}
 				
 //				|adr ind
 				Code.loadConst(1);
