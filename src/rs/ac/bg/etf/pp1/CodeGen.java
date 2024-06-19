@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
+import java_cup.internal_error;
 import rs.ac.bg.etf.pp1.ast.*;
 import rs.etf.pp1.mj.runtime.Code;
 import rs.etf.pp1.symboltable.Tab;
@@ -32,7 +33,6 @@ public class CodeGen extends VisitorAdaptor{
 	private boolean forLoopCond = false;
 	private Stack<Integer> condAddrStack = new Stack<>();
 	private Stack<Integer> secondDesAddrStack = new Stack<>();
-	private int secondDesAddr = -1;
 	private Stack<Integer> exitAddrStack = new Stack<>();
 	private Stack<Integer> stmtAddrStack = new Stack<>();
 	
@@ -421,8 +421,6 @@ public class CodeGen extends VisitorAdaptor{
 		}
 	}
 	
-	
-	
 //****************************************************************************************************************
 //	Factor
 //****************************************************************************************************************
@@ -506,6 +504,53 @@ public class CodeGen extends VisitorAdaptor{
 	}
 	
 	
+//****************************************************************************************************************
+//		Standard methods
+//****************************************************************************************************************
+		
+	private void put_enter(int b1, int b2) {
+		Code.put(Code.enter);
+		Code.put(b1);
+		Code.put(b2);
+	}
+	
+	private void put_return() {
+		Code.put(Code.exit);
+		Code.put(Code.return_);
+	}
+	
+	@Override
+	public void visit(ProgramName programName) {
+		Obj obj = Tab.find("ord");
+		obj.setAdr(Code.pc);
+		put_enter(obj.getLevel(),  obj.getLocalSymbols().size());
+		Code.put(Code.load);
+		Code.put(0);
+		put_return();
+		obj = Tab.find("chr");
+		obj.setAdr(Code.pc);
+		put_enter(obj.getLevel(),  obj.getLocalSymbols().size());
+		Code.put(Code.load);
+		Code.put(0);
+		put_return();
+		obj = Tab.find("len");
+		obj.setAdr(Code.pc);
+		put_enter(obj.getLevel(),  obj.getLocalSymbols().size());
+		Code.put(Code.load);
+		Code.put(0);
+		Code.put(Code.arraylength);
+		put_return();
+	}
+	
+//	@Override
+//	public void visit(FactorOpMethCall factorOpMethCall) {
+//		if(factorOpMethCall.getMethodCallName().getDesignator().obj.getName().equals("ord")) {
+//		} else if(factorOpMethCall.getMethodCallName().getDesignator().obj.getName().equals("chr")) {
+//		} else if(factorOpMethCall.getMethodCallName().getDesignator().obj.getName().equals("len")) {
+//		}
+//	}	
+
+		
 //****************************************************************************************************************
 //	Methods
 //****************************************************************************************************************

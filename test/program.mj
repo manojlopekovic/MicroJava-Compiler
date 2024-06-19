@@ -1,24 +1,17 @@
 program Test
 {
-	
+
 	void main()
-	int a, b;
+	int a, b[];
+	char c;
 	{
-		for(a = 0; a < 20; a++){
-			print(' ');
-			print('b');
-			print('|');
-			for(b = a; b < 5; b++){
-				print(b);
-				print(' ');
-				if(b >= 3)
-					break;
-			}
-			print(' ');
-			print('a');
-			print('=');
-			print(a);
-			print(' ');
-		}
+		c = 'c';
+		a = 65;
+		b = range(12);
+		print(ord(c));
+		print(' ');
+		print(chr(a));
+		print(' ');
+		print(len(b));
 	}
 }

@@ -413,8 +413,12 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	public void visit(StmtPrintExpr stmtPrint) {
 //		Check if variable, element of an array [Field inside class for C]
 		Struct typeStruct = stmtPrint.getExpr().struct;
+		if(stmtPrint.getExpr().getTerm().getFactor().getFactorOp() instanceof FactorOpMethCall) {
+			FactorOpMethCall factorOpMethCall = (FactorOpMethCall) stmtPrint.getExpr().getTerm().getFactor().getFactorOp();
+			typeStruct = factorOpMethCall.getMethodCallName().getDesignator().obj.getType();
+		}
 		if(typeStruct.getKind() != Struct.Array && !typeStruct.equals(intType) && !typeStruct.equals(boolType)  && !typeStruct.equals(charType)) {
-			error_report("Trying to print: " + typeStruct.toString() + " which is not array, integer, char or bool type", stmtPrint);
+			error_report("Trying to print: " + typeStruct.getKind() + " which is not array, integer, char or bool type", stmtPrint);
 			return;
 		}
 	}
@@ -423,8 +427,12 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	public void visit(StmtPrintNum stmtPrint) {
 //		Check if variable, element of an array [Field inside class for C]
 		Struct typeStruct = stmtPrint.getExpr().struct;
+		if(stmtPrint.getExpr().getTerm().getFactor().getFactorOp() instanceof FactorOpMethCall) {
+			FactorOpMethCall factorOpMethCall = (FactorOpMethCall) stmtPrint.getExpr().getTerm().getFactor().getFactorOp();
+			typeStruct = factorOpMethCall.getMethodCallName().getDesignator().obj.getType();
+		}
 		if(typeStruct.getKind() != Struct.Array && !typeStruct.equals(intType) && !typeStruct.equals(boolType)  && !typeStruct.equals(charType)) {
-			error_report("Trying to print: " + typeStruct.toString() + " which is not array, integer, char or bool type, with params", stmtPrint);
+			error_report("Trying to print: " + typeStruct.getKind() + " which is not array, integer, char or bool type, with params", stmtPrint);
 			return;
 		}
 	}
@@ -1049,6 +1057,22 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	
 	@Override
 	public void visit(ProgramName programName) {
+//		FpPos is not set for standard methods
+		Obj obj = Tab.find("ord");
+		Collection<Obj> locSym = obj.getLocalSymbols();
+		for (Obj obj2 : locSym) {
+			obj2.setFpPos(1);
+		}
+		obj = Tab.find("chr");
+		locSym = obj.getLocalSymbols();
+		for (Obj obj2 : locSym) {
+			obj2.setFpPos(1);
+		}
+		obj = Tab.find("len");
+		locSym = obj.getLocalSymbols();
+		for (Obj obj2 : locSym) {
+			obj2.setFpPos(1);
+		}
 //		Creating program scope
 		myProg = Tab.insert(Obj.Prog, programName.getPName(), noType);
 		Tab.openScope();
