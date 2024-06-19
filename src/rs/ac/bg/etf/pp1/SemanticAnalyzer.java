@@ -199,9 +199,9 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	
 	private List<Obj> condHasDesObj(ConditionListCompNoErr cond){
 		List<Obj> list = new ArrayList<>(); 
-		list.addAll(condTermHasDesObj(cond.getCondTerm()));
-		if(cond.getOrCondTerm() instanceof OrCondTermOr) {
-			list.addAll(orCondTermHasDesObj((OrCondTermOr) cond.getOrCondTerm()));
+		list.addAll(condTermHasDesObj(cond.getListCompConditions().getCondTerm()));
+		if(cond.getListCompConditions().getOrCondTerm() instanceof OrCondTermOr) {
+			list.addAll(orCondTermHasDesObj((OrCondTermOr) cond.getListCompConditions().getOrCondTerm()));
 		}
 		return list;
 	}
@@ -293,7 +293,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 						break;
 					}
 				}
-				if(multipleObj || (firstObj != null && !firstObj.equals(multipleObj))) {
+				if(multipleObj || (firstObj != null && !firstObj.equals(condObj))) {
 					error_report("There are multiple variables declared in condition inside list comperhension", listCompIf);
 					return;
 				}
@@ -303,10 +303,10 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	
 	@Override
 	public void visit(ConditionListCompNoErr condition) {
-		if(condition.getOrCondTerm() instanceof OrCondTermOr) {
-			OrCondTermOr orCondTermOr = (OrCondTermOr) condition.getOrCondTerm();
-			if(!condition.getOrCondTerm().struct.compatibleWith(boolType)) {
-				error_report("Expressions are not compatible in condition[ " + condition.getOrCondTerm().struct.getKind() + ", " + boolType.getKind() + " ]" , condition);
+		if(condition.getListCompConditions().getOrCondTerm() instanceof OrCondTermOr) {
+			OrCondTermOr orCondTermOr = (OrCondTermOr) condition.getListCompConditions().getOrCondTerm();
+			if(!condition.getListCompConditions().getOrCondTerm().struct.compatibleWith(boolType)) {
+				error_report("Expressions are not compatible in condition[ " + condition.getListCompConditions().getOrCondTerm().struct.getKind() + ", " + boolType.getKind() + " ]" , condition);
 				condition.struct = noType;
 				return;
 			}

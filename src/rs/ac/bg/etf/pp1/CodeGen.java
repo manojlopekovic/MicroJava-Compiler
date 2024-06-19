@@ -469,12 +469,17 @@ public class CodeGen extends VisitorAdaptor{
 	private int exprAddr = -1;
 	private Struct boolType = Tab.find("bool").getType();
 	private Obj fpObj = new Obj(Obj.Var, "fpobj", boolType);
+	private int ifAddr = -1;
+	private int ifSymAddr;
 	
 	@Override
 	public void visit(ListCompFor listCompFor) {
 		Code.loadConst(0);
 		Code.store(fpObj);
-		Code.load(((DStmtListComp)(listCompFor.getParent())).getDesignator().obj);
+		if(listCompFor.getParent() instanceof DStmtListComp)
+			Code.load(((DStmtListComp)(listCompFor.getParent())).getDesignator().obj);
+		else 
+			Code.load(((DStmtListCompIf)(listCompFor.getParent())).getDesignator().obj);
 		exprAddr = Code.pc;
 	}
 	
@@ -503,6 +508,13 @@ public class CodeGen extends VisitorAdaptor{
 //			Code.load(((FactorOpDesignator)(dStmtListComp.getListCompExpr().getExpr().getTerm().getFactor().getFactorOp())).getDesignator().obj);
 			Code.put(Code.astore);
 		}
+		Code.putJump(0);
+		int fixupAdr = Code.pc - 2;
+//		From if we will jump here
+		ifAddr = Code.pc;
+		Code.put(Code.pop);
+		Code.put(Code.pop);
+		Code.fixup(fixupAdr);
 		Code.loadConst(1);
 		Code.put(Code.add);
 		Code.putJump(0);
@@ -516,6 +528,15 @@ public class CodeGen extends VisitorAdaptor{
 	
 	@Override
 	public void visit(ListCompEpsilon listCompEpsilon) {
+	}
+	
+	@Override
+	public void visit(ListCompConditions listCompConditions) {
+//		Here i will need to jump to in so that array won't update
+		Code.loadConst(1);
+		Code.putFalseJump(Code.eq, ifAddr);
+//		At the end jump to expression if condition is not met
+		Code.putJump(exprAddr);
 	}
 	
 	@Override
@@ -544,6 +565,8 @@ public class CodeGen extends VisitorAdaptor{
 				Code.store(obj);
 			else 
 				Code.put(Code.pop);
+			Code.put(Code.dup2);
+			Code.putJump(exprAddr);
 		} else if(listCompDes.getParent() instanceof DStmtListCompIf) {
 			DStmtListCompIf dStmtListComp = (DStmtListCompIf)listCompDes.getParent();
 			Obj obj = exprHasObj(dStmtListComp.getListCompExpr().getExpr());
@@ -551,9 +574,10 @@ public class CodeGen extends VisitorAdaptor{
 				Code.store(obj);
 			else 
 				Code.put(Code.pop);
+			Code.put(Code.dup2);
+			Code.putJump(0);
+			ifSymAddr = Code.pc - 2;
 		}
-		Code.put(Code.dup2);
-		Code.putJump(exprAddr);
 	}
 	
 	@Override
@@ -561,6 +585,18 @@ public class CodeGen extends VisitorAdaptor{
 		Code.fixup(exitAddr);
 		Code.put(Code.pop);
 		Code.store(dStmtListComp.getDesignator().obj);
+	}
+	
+	@Override
+	public void visit(DStmtListCompIf dStmtListComp) {
+		Code.fixup(exitAddr);
+		Code.put(Code.pop);
+		Code.store(dStmtListComp.getDesignator().obj);
+	}
+	
+	@Override
+	public void visit(ListCompIf listCompIf) {
+		Code.fixup(ifSymAddr);
 	}
 	
 //****************************************************************************************************************

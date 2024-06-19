@@ -119,7 +119,7 @@ nonterminal ForStart;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct ConditionListComp;
 nonterminal ElseSym, EmptyState, IfSym;
 nonterminal FirstSemiSym, SecondSemiSym, ForRparenSym, ForEmptyState;
-nonterminal ListCompFor, ListCompIn, ListCompExpr, ListCompDes, ListCompEpsilon;
+nonterminal ListCompFor, ListCompIn, ListCompExpr, ListCompDes, ListCompEpsilon, ListCompConditions, ListCompIf;
 /* nonterminal DesignatorComma; */
 
 
@@ -382,11 +382,14 @@ DesignatorStatement		::= (DStmtDesAExpr)					Designator:des ASSIGN Expr:expr
 							|
 							(DStmtListComp)					Designator:des ASSIGN LBRACKET ListCompFor ListCompExpr ListCompIn ListCompDes RBRACKET ListCompEpsilon
 							|
-							(DStmtListCompIf)				Designator:des ASSIGN LBRACKET ListCompFor ListCompExpr ListCompIn ListCompDes IF ConditionListComp 
+							(DStmtListCompIf)				Designator:des ASSIGN LBRACKET ListCompFor ListCompExpr ListCompIn ListCompDes ListCompIf ConditionListComp 
 							/*
 							|
 							(DStmtArrayUnpack)				LBRACKET DesignatorComma MUL Designator RBRACKET ASSIGN Designator
 							*/
+							;
+
+ListCompIf				::= (ListCompIf)					IF
 							;
 							
 ListCompEpsilon			::= (ListCompEpsilon)				/* epsilon */
@@ -404,10 +407,13 @@ ListCompFor				::= (ListCompFor)					FOR
 ListCompIn				::= (ListCompIn)					IN
 							;
 							
-ConditionListComp		::= (ConditionListCompNoErr)		CondTerm:ct OrCondTerm RBRACKET
+ConditionListComp		::= (ConditionListCompNoErr)		ListCompConditions RBRACKET
 							|
 							(ConditionListCompErr)			error:e RBRACKET
 							{: parser.report_error("Handling error in if condition till BRACKET in line " + eleft, null);  :}
+							;
+
+ListCompConditions		::= (ListCompConditions)			CondTerm:ct OrCondTerm
 							;
 									
 MethodCallName			::= (MethodCallName)				Designator:des
