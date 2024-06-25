@@ -1,24 +1,16 @@
 program test
 {
 	
-
 	void main()
-	char niz1[], niz2[];
-	char c;
+	int niz[]; int arr[];
+	int a;
 	{
-		niz2 = new char[5];
-		niz1 = new char[5];
+		arr = range(10);
+		niz = new int[10];
 		
-		niz2[0] = 'c';
-		niz2[4] = 'g';
-		
-		niz1 = [for c in niz2];	
-		
-		print(niz2);
+		niz = [for a in arr if a % 2 == 0];
+		print(arr);
 		print(eol);
-		print(niz1);
-		
-		
+		print(niz);
 	}
 }
-

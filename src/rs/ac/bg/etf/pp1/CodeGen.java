@@ -400,7 +400,7 @@ public class CodeGen extends VisitorAdaptor{
 	public void visit(DesignatorVar designatorVar) {
 		if(designatorVar.obj.getName().equals("eol")) {
 //			Sign for LF[LineFeed]
-			Code.loadConst(10);
+//			Code.loadConst(10);
 		} else if(designatorVar.obj.getName().equals("null")) {
 			Code.loadConst(0);
 		}
