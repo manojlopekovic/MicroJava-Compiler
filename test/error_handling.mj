@@ -1,0 +1,23 @@
+program Examples
+//Definition of global variable error handling
+//int a,=;
+
+//Definition of constant error handling
+//const int a ===;
+{
+	// Formal parameters error handling
+	//void sum(int a,,==, char b){
+	void sum(){
+	}
+	
+	void main()
+	int a;
+	{
+		// Assignment error handling
+		//a = 5,,,,;
+		
+		//if condition error handling
+		//if(a=====){ }
+		
+	}
+}	

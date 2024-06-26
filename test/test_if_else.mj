@@ -1,0 +1,35 @@
+program Examples
+{
+
+	
+	void main()
+	int arr1[], arr2[], arr3[];
+	int ia, ib;
+	char ca, cb;
+	char carr1[], carr2[];
+	{
+		// Expressions not compatible in comparison
+		// if(ia == ca)
+		// Wrong relational operator with array
+		// if(arr1 < arr2)
+		// Expression in condition is not boolean
+		// if(ca)
+		
+		ia = 7;
+		
+		if(ia <= 5)
+		{
+			if(ia < 3)
+				print(3);
+			else 
+				if (ia == 4)
+					print(4);
+				else 
+					print(5);
+		} else if (ia == 6)
+			print(6);
+		else 
+			print('>');
+			print(6);
+	}
+}	

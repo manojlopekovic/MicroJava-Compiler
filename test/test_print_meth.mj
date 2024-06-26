@@ -1,0 +1,46 @@
+program Examples
+{
+	int sqr(int a){
+		
+		// Trying to return char to int method
+		// return 'a';
+		return a * a;
+	}
+	
+	void main()
+	int arr1[], arr2[], arr3[];
+	int ia, ib;
+	char ca, cb;
+	char carr1[], carr2[];
+	{
+		read(ia);
+		print(ia);
+		print(eol);
+		arr1 = range(ia);
+		print(arr1);
+		print(eol);
+		
+		// Wrong definition of array
+		// carr = new int[7];
+		carr1 = new char[7];
+		carr1[0] = 'm';
+		carr1[1] = 'a';
+		carr1[2] = 'n';
+		carr1[3] = 'o';
+		carr1[4] = 'j';
+		carr1[5] = 'l';
+		carr1[6] = 'o';
+		print(carr1);
+		print(eol);
+		
+		
+		print(sqr(5));
+		
+		// Trying to call method with wrong parameter types
+		// print(sqr(true));
+		
+		// Trying to call method with different number of parameters
+		// print(sqr(5, 7));
+	}
+	
+}	
