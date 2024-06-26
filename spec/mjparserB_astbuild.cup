@@ -142,6 +142,7 @@ nonterminal ListCompDes ListCompDes;
 nonterminal ListCompEpsilon ListCompEpsilon;
 nonterminal ListCompConditions ListCompConditions;
 nonterminal ListCompIf ListCompIf;
+nonterminal ListCompLBracket ListCompLBracket;
 /* nonterminal DesignatorComma; */
 
 
@@ -402,13 +403,16 @@ DesignatorStatement		::= (DStmtDesAExpr)					Designator:des ASSIGN Expr:expr {: 
 							|
 							(DStmtDesMeth)					MethodCallName:M1 LPAREN ActPars:actPars RPAREN {: RESULT=new DStmtDesMeth(M1, actPars); RESULT.setLine(M1left); :}
 							|
-							(DStmtListComp)					Designator:des ASSIGN LBRACKET ListCompFor:L1 ListCompExpr:L2 ListCompIn:L3 ListCompDes:L4 RBRACKET ListCompEpsilon:L5 {: RESULT=new DStmtListComp(des, L1, L2, L3, L4, L5); RESULT.setLine(desleft); :}
+							(DStmtListComp)					Designator:des ASSIGN ListCompLBracket:L1 ListCompFor:L2 ListCompExpr:L3 ListCompIn:L4 ListCompDes:L5 RBRACKET {: RESULT=new DStmtListComp(des, L1, L2, L3, L4, L5); RESULT.setLine(desleft); :} 
 							|
-							(DStmtListCompIf)				Designator:des ASSIGN LBRACKET ListCompFor:L1 ListCompExpr:L2 ListCompIn:L3 ListCompDes:L4 ListCompIf:L5 ConditionListComp:C6 {: RESULT=new DStmtListCompIf(des, L1, L2, L3, L4, L5, C6); RESULT.setLine(desleft); :} 
+							(DStmtListCompIf)				Designator:des ASSIGN ListCompLBracket:L1 ListCompFor:L2 ListCompExpr:L3 ListCompIn:L4 ListCompDes:L5 ListCompIf:L6 ConditionListComp:C7 {: RESULT=new DStmtListCompIf(des, L1, L2, L3, L4, L5, L6, C7); RESULT.setLine(desleft); :} 
 							/*
 							|
 							(DStmtArrayUnpack)				LBRACKET DesignatorComma MUL Designator RBRACKET ASSIGN Designator
 							*/
+							;
+
+ListCompLBracket		::= (ListCompLBracket)				LBRACKET {: RESULT=new ListCompLBracket(); :}
 							;
 
 ListCompIf				::= (ListCompIf)					IF {: RESULT=new ListCompIf(); :}

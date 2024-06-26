@@ -8,7 +8,8 @@ program test
 		arr = range(10);
 		niz = new int[10];
 		
-		niz = [for a in arr if a % 2 == 0];
+		niz = [for a + 1 in arr];
+		//niz = [for a in arr if a % 2 == 0];
 		print(arr);
 		print(eol);
 		print(niz);

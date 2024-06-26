@@ -483,65 +483,43 @@ public class CodeGen extends VisitorAdaptor{
 		return obj;
 	}
 	
-	private int exitAddr;
+	private int exitAddr = -1;
+	private int exitAddr1 = -1;
 	private int exprAddr = -1;
 	private Struct boolType = Tab.find("bool").getType();
 	private Obj fpObj = new Obj(Obj.Var, "fpobj", boolType);
 	private int ifAddr = -1;
 	private int ifSymAddr;
+	private int inAddrJump;
+	private int desAddrJump;
 	
 	@Override
-	public void visit(ListCompFor listCompFor) {
-		Code.loadConst(0);
-		Code.store(fpObj);
-		if(listCompFor.getParent() instanceof DStmtListComp)
-			Code.load(((DStmtListComp)(listCompFor.getParent())).getDesignator().obj);
+	public void visit(ListCompLBracket listCompLBracket) {
+		if(listCompLBracket.getParent() instanceof DStmtListComp)
+			Code.load(((DStmtListComp)(listCompLBracket.getParent())).getListCompDes().getDesignator().obj);
 		else 
-			Code.load(((DStmtListCompIf)(listCompFor.getParent())).getDesignator().obj);
+			Code.load(((DStmtListCompIf)(listCompLBracket.getParent())).getListCompDes().getDesignator().obj);
+		Code.put(Code.arraylength);
+		Code.loadConst(0);
+		Code.putFalseJump(Code.ne, 0);
+		exitAddr1 = Code.pc - 2;
+		
+		Code.putJump(0);
+		inAddrJump = Code.pc - 2;
+	}
+	
+//	For is used for exit case, as array can be of zero length
+//	Also, if runtime check is needed, do it here
+	@Override
+	public void visit(ListCompFor listCompFor) {
 		exprAddr = Code.pc;
 	}
 	
 	@Override
 	public void visit(ListCompIn listCompIn) {
-//		This is check if first iteration has passed so that index will be set | incremented
-		Code.load(fpObj);
-		Code.loadConst(1);
-		Code.putFalseJump(Code.eq, 0);
-		int elseAddr = Code.pc - 2;
-//		If it's not first iteration, code continues from here
-		if(listCompIn.getParent() instanceof DStmtListComp) {
-//			DStmtListComp dStmtListComp = (DStmtListComp)listCompIn.getParent();
-//			Code.put(Code.dup2);
-//			Code.load(desArrObj);
-//			Code.put(Code.dup_x2);
-//			Code.put(Code.pop);
-//			Code.load(((FactorOpDesignator)(dStmtListComp.getListCompExpr().getExpr().getTerm().getFactor().getFactorOp())).getDesignator().obj);
-			Code.put(Code.astore);
-		} else if(listCompIn.getParent() instanceof DStmtListCompIf) {
-//			DStmtListCompIf dStmtListComp = (DStmtListCompIf)listCompIn.getParent();
-//			Code.put(Code.dup2);
-//			Code.load(desArrObj);
-//			Code.put(Code.dup_x2);
-//			Code.put(Code.pop);
-//			Code.load(((FactorOpDesignator)(dStmtListComp.getListCompExpr().getExpr().getTerm().getFactor().getFactorOp())).getDesignator().obj);
-			Code.put(Code.astore);
-		}
-		Code.putJump(0);
-		int fixupAdr = Code.pc - 2;
-//		From if we will jump here
-		ifAddr = Code.pc;
-		Code.put(Code.pop);
-		Code.put(Code.pop);
-		Code.fixup(fixupAdr);
-		Code.loadConst(1);
-		Code.put(Code.add);
-		Code.putJump(0);
-		int exAddr = Code.pc - 2;
-//		Jump to here if it is still first iteration
-		Code.fixup(elseAddr);
-		Code.put(Code.pop);
+		Code.fixup(inAddrJump);
 		Code.loadConst(0);
-		Code.fixup(exAddr);
+		Code.put(Code.dup);
 	}
 	
 	@Override
@@ -550,71 +528,119 @@ public class CodeGen extends VisitorAdaptor{
 	
 	@Override
 	public void visit(ListCompConditions listCompConditions) {
-//		Here i will need to jump to in so that array won't update
-		Code.loadConst(1);
-		Code.putFalseJump(Code.eq, ifAddr);
-//		At the end jump to expression if condition is not met
-		Code.putJump(exprAddr);
 	}
 	
+//	In expression, i will save value to array that is written to and increment it's index if needed for if
 	@Override
 	public void visit(ListCompExpr listCompExpr) {
+//		val should be stored to primaryDesignator[ind1]
+//		| ind1 ind2 val
+		Code.put(Code.dup_x2);
+//		| val ind1 ind2 val
+		Code.put(Code.pop);
+//		| val ind1 ind2
+		Code.put(Code.dup_x2);
+//		| ind2 val ind1 ind2 
+		Code.put(Code.pop);
+//		| ind2 val ind1 
+		Code.put(Code.dup_x2);
+//		| ind1 ind2 val ind1 
+		Code.put(Code.dup_x1);
+//		| ind1 ind2 ind1 val ind1 
+		Code.put(Code.pop);
+//		| ind1 ind2 ind1 val 
+		
+		if(listCompExpr.getParent() instanceof DStmtListComp) {
+			DStmtListComp dStmtListComp = (DStmtListComp)(listCompExpr.getParent());
+			Code.load(dStmtListComp.getDesignator().obj);
+		} else {
+			DStmtListCompIf dStmtListCompIf = (DStmtListCompIf)(listCompExpr.getParent());
+			Code.load(dStmtListCompIf.getDesignator().obj);
+		}
+//		| ind1 ind2 ind1 val arrAddr
+		Code.put(Code.dup_x2);
+//		| ind1 ind2 arrAddr ind1 val arrAddr
+		Code.put(Code.pop);
+//		| ind1 ind2 arrAddr ind1 val
+		if(listCompExpr.getExpr().struct.equals(Tab.charType))
+			Code.put(Code.bastore);
+		else 
+			Code.put(Code.astore);
+
+//		| ind1 ind2 
+		Code.put(Code.dup_x1);
+//		| ind2 ind1 ind2 
+		Code.put(Code.pop);
+//		| ind2 ind1  
+		Code.loadConst(1);
+		Code.put(Code.add);
+//		| ind2 ind1+1  
+		Code.put(Code.dup_x1);
+//		| ind1+1 ind2 ind1+1  
+		Code.put(Code.pop);
+//		| ind1+1 ind2  
+		
+//		Check condition
+		Code.put(Code.dup);
+		if(listCompExpr.getParent() instanceof DStmtListComp)
+			Code.load(((DStmtListComp)(listCompExpr.getParent())).getListCompDes().getDesignator().obj);
+		else 
+			Code.load(((DStmtListCompIf)(listCompExpr.getParent())).getListCompDes().getDesignator().obj);
+		Code.put(Code.arraylength);
+		Code.putFalseJump(Code.lt, 0);
+		exitAddr = Code.pc - 2;
+		
+		Code.putJump(0);
+		desAddrJump = Code.pc - 2;
 	}
 	
 	@Override
 	public void visit(ListCompDes listCompDes) {
-		Code.loadConst(1);
-		Code.store(fpObj);
-		Code.put(Code.dup);
-		Code.load(listCompDes.getDesignator().obj);
-		Code.put(Code.arraylength);
-		Code.putFalseJump(Code.lt, 0);
-		exitAddr = Code.pc - 2;
+		Code.fixup(desAddrJump);
+		
+//		|ind1 ind2 
 		Code.put(Code.dup);
 		Code.load(listCompDes.getDesignator().obj);
 		Code.put(Code.dup_x1);
 		Code.put(Code.pop);
 		Code.put(Code.aload);
+		
+		Obj obj;
 		if(listCompDes.getParent() instanceof DStmtListComp) {
-			DStmtListComp dStmtListComp = (DStmtListComp)listCompDes.getParent();
-//			Code.load(dStmtListComp.getDesignator().obj);
-			Obj obj = exprHasObj(dStmtListComp.getListCompExpr().getExpr());
-			if(obj != null)
-				Code.store(obj);
-			else 
-				Code.put(Code.pop);
-			Code.put(Code.dup2);
-			Code.putJump(exprAddr);
-		} else if(listCompDes.getParent() instanceof DStmtListCompIf) {
-			DStmtListCompIf dStmtListComp = (DStmtListCompIf)listCompDes.getParent();
-			Obj obj = exprHasObj(dStmtListComp.getListCompExpr().getExpr());
-			if(obj != null)
-				Code.store(obj);
-			else 
-				Code.put(Code.pop);
-			Code.put(Code.dup2);
-			Code.putJump(0);
-			ifSymAddr = Code.pc - 2;
+			DStmtListComp dStmtListComp = (DStmtListComp)(listCompDes.getParent());
+			obj = exprHasObj(dStmtListComp.getListCompExpr().getExpr());
+		} else {
+			DStmtListCompIf dStmtListCompIf = (DStmtListCompIf)(listCompDes.getParent());
+			obj = exprHasObj(dStmtListCompIf.getListCompExpr().getExpr());
 		}
+		
+		if(obj != null)
+			Code.store(obj);
+		
+		Code.loadConst(1);
+		Code.put(Code.add);
+		
+		Code.putJump(exprAddr);
 	}
 	
 	@Override
 	public void visit(DStmtListComp dStmtListComp) {
+		Code.fixup(exitAddr1);
 		Code.fixup(exitAddr);
 		Code.put(Code.pop);
-		Code.store(dStmtListComp.getDesignator().obj);
+		Code.put(Code.pop);
 	}
 	
 	@Override
 	public void visit(DStmtListCompIf dStmtListComp) {
+		Code.fixup(exitAddr1);
 		Code.fixup(exitAddr);
 		Code.put(Code.pop);
-		Code.store(dStmtListComp.getDesignator().obj);
+		Code.put(Code.pop);
 	}
 	
 	@Override
 	public void visit(ListCompIf listCompIf) {
-		Code.fixup(ifSymAddr);
 	}
 	
 //****************************************************************************************************************
