@@ -492,6 +492,9 @@ public class CodeGen extends VisitorAdaptor{
 	private int ifSymAddr;
 	private int inAddrJump;
 	private int desAddrJump;
+	private int gotoCondAddr;
+	private int condFalseAddr;
+	private int condTrueAddr;
 	
 	@Override
 	public void visit(ListCompLBracket listCompLBracket) {
@@ -525,9 +528,19 @@ public class CodeGen extends VisitorAdaptor{
 	@Override
 	public void visit(ListCompEpsilon listCompEpsilon) {
 	}
+
+	@Override
+	public void visit(ListCompIf listCompIf) {
+		Code.fixup(gotoCondAddr);
+	}
 	
 	@Override
 	public void visit(ListCompConditions listCompConditions) {
+		Code.loadConst(1);
+		Code.putFalseJump(Code.ne, condTrueAddr);
+		Code.loadConst(1);
+		Code.put(Code.add);
+		Code.putJump(condFalseAddr);
 	}
 	
 //	In expression, i will save value to array that is written to and increment it's index if needed for if
@@ -566,7 +579,7 @@ public class CodeGen extends VisitorAdaptor{
 			Code.put(Code.bastore);
 		else 
 			Code.put(Code.astore);
-
+		
 //		| ind1 ind2 
 		Code.put(Code.dup_x1);
 //		| ind2 ind1 ind2 
@@ -579,7 +592,8 @@ public class CodeGen extends VisitorAdaptor{
 //		| ind1+1 ind2 ind1+1  
 		Code.put(Code.pop);
 //		| ind1+1 ind2  
-		
+
+		condFalseAddr = Code.pc;
 //		Check condition
 		Code.put(Code.dup);
 		if(listCompExpr.getParent() instanceof DStmtListComp)
@@ -589,9 +603,10 @@ public class CodeGen extends VisitorAdaptor{
 		Code.put(Code.arraylength);
 		Code.putFalseJump(Code.lt, 0);
 		exitAddr = Code.pc - 2;
-		
+
 		Code.putJump(0);
 		desAddrJump = Code.pc - 2;
+		
 	}
 	
 	@Override
@@ -617,6 +632,12 @@ public class CodeGen extends VisitorAdaptor{
 		if(obj != null)
 			Code.store(obj);
 		
+		if(listCompDes.getParent() instanceof DStmtListCompIf)
+			Code.putJump(0);
+		gotoCondAddr = Code.pc - 2;
+		condTrueAddr = Code.pc;
+		
+		
 		Code.loadConst(1);
 		Code.put(Code.add);
 		
@@ -639,9 +660,6 @@ public class CodeGen extends VisitorAdaptor{
 		Code.put(Code.pop);
 	}
 	
-	@Override
-	public void visit(ListCompIf listCompIf) {
-	}
 	
 //****************************************************************************************************************
 //	Expr
