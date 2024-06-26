@@ -120,6 +120,7 @@ nonterminal rs.etf.pp1.symboltable.concepts.Struct ConditionListComp;
 nonterminal ElseSym, EmptyState, IfSym;
 nonterminal FirstSemiSym, SecondSemiSym, ForRparenSym, ForEmptyState;
 nonterminal ListCompFor, ListCompIn, ListCompExpr, ListCompDes, ListCompEpsilon, ListCompConditions, ListCompIf, ListCompLBracket;
+nonterminal DesignatorStmtErr;
 /* nonterminal DesignatorComma; */
 
 
@@ -270,7 +271,7 @@ Statement				::= (StatementMatched)				Matched
 							(StatementUnmatched)			Unmatched
 							;
 
-Matched					::= (StmtDesignatorStmt)			DesignatorStatement:des SEMI
+Matched					::= (StmtDesignatorStmt)			DesignatorStmtErr
 							|
 							(StmtRead)						READ LPAREN Designator:des RPAREN SEMI
 							|
@@ -371,7 +372,12 @@ ExprEpsilon				::= (ExprEpsilonExpr)				Expr:expr
 							(ExprEpsilonEpsilon)			/* epsilon */
 							;
 							
-							
+DesignatorStmtErr		::= (DesignatorStmtNoErr)			DesignatorStatement SEMI
+							|
+							(DesignatorStmtErr)				error:e SEMI
+							{: parser.report_error("Handling error in assignment till ; in line " + eleft, null); :}
+							;				
+					
 DesignatorStatement		::= (DStmtDesAExpr)					Designator:des ASSIGN Expr:expr
 							|
 							(DStmtDesInc)					Designator:des INC
@@ -382,7 +388,7 @@ DesignatorStatement		::= (DStmtDesAExpr)					Designator:des ASSIGN Expr:expr
 							|
 							(DStmtListComp)					Designator:des ASSIGN ListCompLBracket ListCompFor ListCompExpr ListCompIn ListCompDes RBRACKET 
 							|
-							(DStmtListCompIf)				Designator:des ASSIGN ListCompLBracket ListCompFor ListCompExpr ListCompIn ListCompDes ListCompIf ConditionListComp 
+							(DStmtListCompIf)				Designator:des ASSIGN ListCompLBracket ListCompFor ListCompExpr ListCompIn ListCompDes ListCompIf ConditionListComp 		
 							/*
 							|
 							(DStmtArrayUnpack)				LBRACKET DesignatorComma MUL Designator RBRACKET ASSIGN Designator
